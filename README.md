@@ -2,19 +2,20 @@
 
 SSH Watchdog is a self-contained GNOME Shell extension for SSH session visibility.
 
+## Preview
+
+| Idle State | Active Sessions |
+| --- | --- |
+| ![Idle State](screenshots/ssh-watchdog-01-idle.png) | ![Active Sessions](screenshots/ssh-watchdog-03-active-sessions.png) |
+| Notifications | Preferences |
+| ![Notifications](screenshots/ssh-watchdog-02-notification.png) | ![Preferences](screenshots/ssh-watchdog-04-preferences.png) |
+
 ## Features
 
 - Modern UI: Redesigned "Apple-style" popup menu with symbolic icons and monospaced typography.
-- Smart Notifications: Independent toggles for connection and disconnection alerts with intelligent IP tracking.
-- Customization: Independent controls for icons, "SSH:" prefix, and refresh intervals.
-
-Current behavior:
-- Top bar indicator shows active SSH device count as `SSH: N`.
-- Dropdown menu shows one line per unique remote IPv4 address.
-- Refresh interval is configurable in Preferences (`1-60` seconds, default `10`).
-- Appearance preference currently supports toggling the indicator icon.
-- When active session count increases, GNOME sends a system notification with the newly connected IP address(es).
-- Notifications are only emitted on increases in count, so steady-state polling does not spam.
+- Session Visibility: Top bar indicator can show active SSH session count as `SSH: N`, and the dropdown lists one line per unique remote IPv4 address.
+- Smart Notifications: Independent toggles for connection and disconnection alerts with IP-aware state tracking to avoid polling noise.
+- Customization: Independent controls for the indicator icon, `SSH:` label prefix, and polling interval (`1-60` seconds, default `10`).
 
 ## How It Works
 
@@ -25,7 +26,7 @@ Single component:
 - Uses: `who | grep -oP '\(\K[\d\.]+' | sort -u`
 - Extracts IPv4 inside parentheses from `who` output.
 - Tracks previous state (`lastCount` + last seen IP set).
-- Sends notifications through GNOME Shell (`Main.notify`) only for newly seen IPs when the count goes up.
+- Sends notifications through GNOME Shell (`Main.notify`) for connection and disconnection events based on state transitions.
 - Reacts live to preference changes without needing GNOME Shell restart.
 
 ## Project Layout
