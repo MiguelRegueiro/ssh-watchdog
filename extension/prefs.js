@@ -80,5 +80,17 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         appearanceGroup.add(prefixRow);
 
         settings.bind('show-prefix', prefixSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const notificationsRow = new Adw.ActionRow({
+            title: 'Notifications',
+        });
+        const notificationsSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        notificationsRow.add_suffix(notificationsSwitch);
+        notificationsRow.activatable_widget = notificationsSwitch;
+        appearanceGroup.add(notificationsRow);
+
+        settings.bind('show-notifications', notificationsSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
     }
 }

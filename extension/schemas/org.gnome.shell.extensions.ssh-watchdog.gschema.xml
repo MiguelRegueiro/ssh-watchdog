@@ -17,5 +17,10 @@
       <summary>Show SSH label prefix</summary>
       <description>Whether to display the SSH text prefix before the session count.</description>
     </key>
+    <key name="show-notifications" type="b">
+      <default>true</default>
+      <summary>Show connection notifications</summary>
+      <description>Whether to show a notification when new SSH sessions are detected.</description>
+    </key>
   </schema>
 </schemalist>

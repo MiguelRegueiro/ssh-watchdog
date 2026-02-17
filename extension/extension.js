@@ -13,6 +13,7 @@ const SETTINGS_SCHEMA_ID = 'org.gnome.shell.extensions.ssh-watchdog';
 const REFRESH_INTERVAL_KEY = 'refresh-interval';
 const SHOW_ICON_KEY = 'show-icon';
 const SHOW_PREFIX_KEY = 'show-prefix';
+const SHOW_NOTIFICATIONS_KEY = 'show-notifications';
 const REFRESH_INTERVAL_MIN_SECONDS = 1;
 const REFRESH_INTERVAL_MAX_SECONDS = 60;
 const REFRESH_INTERVAL_DEFAULT_SECONDS = 10;
@@ -86,7 +87,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         }
     }
 
-    refreshCount() {
+    refreshCount(showNotifications = true) {
         const ipOutput = this._runCommand(SSH_UNIQUE_MENU_COMMAND);
         const currentIPs = ipOutput.length > 0
             ? ipOutput.split('\n').filter(line => line.length > 0)
@@ -99,7 +100,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
 
         if (this._lastCount !== null && count > this._lastCount) {
             const newIPs = currentIPs.filter(ip => !this._lastIPs.has(ip));
-            if (newIPs.length > 0)
+            if (showNotifications && newIPs.length > 0)
                 this._notifyNewSessions(newIPs);
         }
 
@@ -213,7 +214,8 @@ export default class SSHWatchdogExtension extends Extension {
             GLib.PRIORITY_DEFAULT,
             intervalSeconds,
             () => {
-                this._indicator?.refreshCount();
+                const showNotifications = this._settings?.get_boolean(SHOW_NOTIFICATIONS_KEY) ?? true;
+                this._indicator?.refreshCount(showNotifications);
                 return GLib.SOURCE_CONTINUE;
             }
         );
@@ -228,7 +230,8 @@ export default class SSHWatchdogExtension extends Extension {
 
     _restartRefreshLoop() {
         this._startRefreshLoop();
-        this._indicator?.refreshCount();
+        const showNotifications = this._settings?.get_boolean(SHOW_NOTIFICATIONS_KEY) ?? true;
+        this._indicator?.refreshCount(showNotifications);
     }
 
     _updateUI() {
