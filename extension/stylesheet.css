@@ -2,7 +2,12 @@
   margin-left: 0;
 }
 
-.ssh-watchdog-menu-label {
-  max-width: 420px;
+.ssh-watchdog-menu {
+  padding: 10px 12px;
+}
+
+.ssh-ip-label {
   font-family: monospace;
+  font-size: 14px;
+  margin-left: 12px;
 }

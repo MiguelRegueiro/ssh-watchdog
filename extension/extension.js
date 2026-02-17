@@ -2,7 +2,6 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
-import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -50,21 +49,30 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._box.add_child(this._label);
         this.add_child(this._box);
 
-        this._whoItem = new PopupMenu.PopupBaseMenuItem({
+        this.menu.box.add_style_class_name('ssh-watchdog-menu');
+        if (typeof this.menu.setSourceAlignment === 'function')
+            this.menu.setSourceAlignment(0.5);
+        else
+            this.menu._arrowAlignment = 0.5;
+
+        this._headerItem = new PopupMenu.PopupBaseMenuItem({
             reactive: false,
             can_focus: false,
         });
-        this._whoLabel = new St.Label({
-            text: 'Loading...',
+        this._headerItem.add_style_class_name('system-status-menu-list-item');
+        this._headerLabel = new St.Label({
+            text: 'ACTIVE SESSIONS',
             x_expand: true,
             y_align: Clutter.ActorAlign.CENTER,
-            style_class: 'ssh-watchdog-menu-label',
+            style_class: 'system-status-menu-list-item',
         });
+        this._headerItem.add_child(this._headerLabel);
+        this.menu.addMenuItem(this._headerItem);
 
-        this._whoLabel.clutter_text.line_wrap = true;
-        this._whoLabel.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
-        this._whoItem.add_child(this._whoLabel);
-        this.menu.addMenuItem(this._whoItem);
+        this._sessionsSection = new PopupMenu.PopupMenuSection();
+        this.menu.addMenuItem(this._sessionsSection);
+
+        this._updateWhoOutput([]);
 
         this.menu.connect('open-state-changed', (_menu, isOpen) => {
             if (isOpen)
@@ -125,7 +133,48 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
     }
 
     _updateWhoOutput(ips) {
-        this._whoLabel.text = ips.length > 0 ? ips.join('\n') : 'No active sessions.';
+        this._sessionsSection.removeAll();
+
+        if (ips.length === 0) {
+            this._sessionsSection.addMenuItem(this._createSessionItem(
+                'No active sessions',
+                'security-low-symbolic',
+                true
+            ));
+            return;
+        }
+
+        for (const ip of ips)
+            this._sessionsSection.addMenuItem(this._createSessionItem(ip, 'utilities-terminal-symbolic'));
+    }
+
+    _createSessionItem(text, iconName, isDimmed = false) {
+        const item = new PopupMenu.PopupMenuItem('', {
+            reactive: false,
+            can_focus: false,
+        });
+        item.label.visible = false;
+
+        const row = new St.BoxLayout({
+            x_expand: true,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        const icon = new St.Icon({
+            icon_name: iconName,
+            style_class: 'popup-menu-icon',
+        });
+        const label = new St.Label({
+            text,
+            x_expand: true,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: isDimmed ? 'ssh-ip-label dim-label' : 'ssh-ip-label',
+        });
+
+        row.add_child(icon);
+        row.add_child(label);
+        item.add_child(row);
+
+        return item;
     }
 
     _notifyWithIcon(title, message, iconName) {
