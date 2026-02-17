@@ -64,12 +64,12 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
             reactive: false,
             can_focus: false,
         });
-        this._headerItem.add_style_class_name('system-status-menu-list-item');
+        this._headerItem.add_style_class_name('ssh-watchdog-header-item');
         this._headerLabel = new St.Label({
             text: 'ACTIVE SESSIONS',
             x_expand: true,
             y_align: Clutter.ActorAlign.CENTER,
-            style_class: 'system-status-menu-list-item',
+            style_class: 'ssh-watchdog-header-label',
         });
         this._headerItem.add_child(this._headerLabel);
         this.menu.addMenuItem(this._headerItem);
@@ -158,6 +158,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
             reactive: false,
             can_focus: false,
         });
+        item.add_style_class_name('ssh-watchdog-session-item');
         item.label.visible = false;
 
         const row = new St.BoxLayout({
