@@ -31,12 +31,17 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._showPrefix = true;
         this._count = 0;
 
-        this._box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
-        this._box.set_style('spacing: 0px;');
+        this._box = new St.BoxLayout({
+            style_class: 'panel-status-indicators-box',
+            x_expand: false,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+        this._box.add_style_class_name('ssh-watchdog-indicator-box');
         this._icon = new St.Icon({
             icon_name: 'network-server-symbolic',
-            style_class: 'system-status-icon',
-            style: 'margin-right: 0px;',
+            style_class: 'system-status-icon ssh-watchdog-icon',
+            y_align: Clutter.ActorAlign.CENTER,
         });
         this._label = new St.Label({
             text: 'SSH: 0',

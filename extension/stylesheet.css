@@ -1,5 +1,17 @@
+.ssh-watchdog-indicator-box {
+  margin: 0;
+  padding: 0 8px;
+  spacing: 4px;
+}
+
 .ssh-watchdog-label {
-  margin-left: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.ssh-watchdog-icon {
+  margin: 0;
+  padding: 0;
 }
 
 .ssh-watchdog-menu {
