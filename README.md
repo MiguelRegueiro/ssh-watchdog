@@ -1,14 +1,17 @@
 # SSH Watchdog GNOME Extension
 
+<p align="center">
+  <img src="screenshots/ssh-watchdog-gnome-extension.png" width="800" alt="SSH Watchdog GNOME Extension">
+</p>
+
 SSH Watchdog is a self-contained GNOME Shell extension for SSH session visibility.
 
-## Preview
+## Interface
 
-| Idle State | Active Sessions |
-| --- | --- |
-| ![Idle State](screenshots/ssh-watchdog-01-idle.png) | ![Active Sessions](screenshots/ssh-watchdog-03-active-sessions.png) |
-| Notifications | Preferences |
-| ![Notifications](screenshots/ssh-watchdog-02-notification.png) | ![Preferences](screenshots/ssh-watchdog-04-preferences.png) |
+|  |  |
+|---|---|
+| <sub>Idle State</sub><br><img src="screenshots/ssh-watchdog-01-idle.png" width="400" alt="Idle State"> | <sub>Session Details</sub><br><img src="screenshots/ssh-watchdog-03-active-sessions.png" width="400" alt="Session Details"> |
+| <sub>Native Notifications</sub><br><img src="screenshots/ssh-watchdog-02-notification.png" width="400" alt="Native Notifications"> | <sub>Configuration</sub><br><img src="screenshots/ssh-watchdog-04-preferences.png" width="400" alt="Configuration"> |
 
 ## Features
 
