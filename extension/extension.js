@@ -26,12 +26,15 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._lastIPs = new Set();
 
         this._box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
+        this._box.set_style('spacing: 0px;');
         this._icon = new St.Icon({
             icon_name: 'network-server-symbolic',
             style_class: 'system-status-icon',
+            style: 'margin-right: 0px;',
         });
         this._label = new St.Label({
             text: 'SSH: 0',
+            x_align: Clutter.ActorAlign.START,
             y_align: Clutter.ActorAlign.CENTER,
             style_class: 'ssh-watchdog-label',
         });
@@ -123,6 +126,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
     setAppearance(showIcon) {
         this._icon.visible = showIcon;
         this._label.visible = true;
+        this._label.set_style('margin-left: 0px;');
     }
 });
 
