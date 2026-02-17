@@ -1,0 +1,26 @@
+post_install() {
+  local uuid='ssh-watchdog@local'
+  local src="/usr/share/ssh-watchdog/$uuid"
+
+  if [[ -n "$SUDO_USER" ]]; then
+    local home_dir
+    home_dir="$(getent passwd "$SUDO_USER" | cut -d: -f6)"
+    if [[ -n "$home_dir" ]]; then
+      local target="$home_dir/.local/share/gnome-shell/extensions/$uuid"
+      install -d -m755 "$target"
+      cp -rf "$src"/. "$target"/
+      if [[ -d "$target/schemas" ]]; then
+        glib-compile-schemas "$target/schemas"
+      fi
+      chown -R "$SUDO_USER":"$SUDO_USER" "$target"
+      echo "Installed extension to $target"
+      echo 'Log out/log in, then enable SSH Watchdog in GNOME Extensions.'
+    fi
+  else
+    echo "Copy extension files manually from $src to ~/.local/share/gnome-shell/extensions/$uuid"
+  fi
+}
+
+post_upgrade() {
+  post_install
+}

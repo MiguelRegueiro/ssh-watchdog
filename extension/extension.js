@@ -1,0 +1,208 @@
+import Clutter from 'gi://Clutter';
+import GLib from 'gi://GLib';
+import GObject from 'gi://GObject';
+import Pango from 'gi://Pango';
+import St from 'gi://St';
+
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+
+const SETTINGS_SCHEMA_ID = 'org.gnome.shell.extensions.ssh-watchdog';
+const REFRESH_INTERVAL_KEY = 'refresh-interval';
+const REFRESH_INTERVAL_MIN_SECONDS = 1;
+const REFRESH_INTERVAL_MAX_SECONDS = 60;
+const REFRESH_INTERVAL_DEFAULT_SECONDS = 10;
+const DECODER = new TextDecoder();
+const SSH_UNIQUE_MENU_COMMAND = "/usr/bin/who | /usr/bin/grep -oP '\\(\\K[\\d\\.]+' | /usr/bin/sort -u";
+
+const SSHWatchdogIndicator = GObject.registerClass(
+class SSHWatchdogIndicator extends PanelMenu.Button {
+    constructor() {
+        super(0.0, 'SSH Watchdog', false);
+        this._lastCount = null;
+        this._lastIPs = new Set();
+
+        this._box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
+        this._icon = new St.Icon({
+            icon_name: 'network-server-symbolic',
+            style_class: 'system-status-icon',
+        });
+        this._label = new St.Label({
+            text: 'SSH: 0',
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'ssh-watchdog-label',
+        });
+
+        this._box.add_child(this._icon);
+        this._box.add_child(this._label);
+        this.add_child(this._box);
+
+        this._whoItem = new PopupMenu.PopupBaseMenuItem({
+            reactive: false,
+            can_focus: false,
+        });
+        this._whoLabel = new St.Label({
+            text: 'Loading...',
+            x_expand: true,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'ssh-watchdog-menu-label',
+        });
+
+        this._whoLabel.clutter_text.line_wrap = true;
+        this._whoLabel.clutter_text.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
+        this._whoItem.add_child(this._whoLabel);
+        this.menu.addMenuItem(this._whoItem);
+
+        this.menu.connect('open-state-changed', (_menu, isOpen) => {
+            if (isOpen)
+                this.refreshWhoOutput();
+        });
+    }
+
+    _runCommand(command) {
+        try {
+            // Use sync spawn to avoid D-Bus/systemd transient-scope issues in nested sessions.
+            const escapedCommand = GLib.shell_quote(command);
+            const shellCommand = `/bin/bash -c ${escapedCommand}`;
+            const [success, stdout, stderr] = GLib.spawn_command_line_sync(shellCommand);
+            if (!success) {
+                const stderrText = stderr ? DECODER.decode(stderr).trim() : '';
+                console.error(`[SSH-Watchdog] Command failed: ${command} :: ${stderrText}`);
+                return '';
+            }
+            return stdout ? DECODER.decode(stdout).trim() : '';
+        } catch (error) {
+            console.error(`[SSH-Watchdog] Spawn error: ${error?.stack ?? error}`);
+            return '';
+        }
+    }
+
+    refreshCount() {
+        const ipOutput = this._runCommand(SSH_UNIQUE_MENU_COMMAND);
+        const currentIPs = ipOutput.length > 0
+            ? ipOutput.split('\n').filter(line => line.length > 0)
+            : [];
+        const count = currentIPs.length;
+
+        this._label.text = `SSH: ${count}`;
+        this._updateWhoOutput(currentIPs);
+
+        if (this._lastCount !== null && count > this._lastCount) {
+            const newIPs = currentIPs.filter(ip => !this._lastIPs.has(ip));
+            if (newIPs.length > 0)
+                this._notifyNewSessions(newIPs);
+        }
+
+        this._lastCount = count;
+        this._lastIPs = new Set(currentIPs);
+    }
+
+    refreshWhoOutput() {
+        const ipOutput = this._runCommand(SSH_UNIQUE_MENU_COMMAND);
+        const currentIPs = ipOutput.length > 0
+            ? ipOutput.split('\n').filter(line => line.length > 0)
+            : [];
+        this._updateWhoOutput(currentIPs);
+    }
+
+    _updateWhoOutput(ips) {
+        this._whoLabel.text = ips.length > 0 ? ips.join('\n') : 'No active sessions.';
+    }
+
+    _notifyNewSessions(newIPs) {
+        const plural = newIPs.length === 1 ? '' : 's';
+        Main.notify(
+            'SSH Watchdog',
+            `New SSH session${plural} from: ${newIPs.join(', ')}`
+        );
+    }
+});
+
+export default class SSHWatchdogExtension extends Extension {
+    constructor(metadata) {
+        super(metadata);
+        this._indicator = null;
+        this._settings = null;
+        this._settingsChangedId = null;
+        this._refreshTimeoutId = null;
+        this.init();
+    }
+
+    init() {
+        console.log('[SSH-Watchdog] init() called');
+    }
+
+    enable() {
+        console.log('[SSH-Watchdog] enable() called');
+
+        try {
+            this._settings = this.getSettings(SETTINGS_SCHEMA_ID);
+            this._settingsChangedId = this._settings.connect(
+                `changed::${REFRESH_INTERVAL_KEY}`,
+                () => this._restartRefreshLoop()
+            );
+
+            this._indicator = new SSHWatchdogIndicator();
+            Main.panel.addToStatusArea(this.uuid, this._indicator);
+
+            this._indicator.refreshCount();
+            this._startRefreshLoop();
+        } catch (error) {
+            console.error(`[SSH-Watchdog] enable() failed: ${error?.stack ?? error}`);
+            this.disable();
+        }
+    }
+
+    disable() {
+        console.log('[SSH-Watchdog] disable() called');
+
+        this._stopRefreshLoop();
+
+        if (this._settings && this._settingsChangedId !== null) {
+            this._settings.disconnect(this._settingsChangedId);
+            this._settingsChangedId = null;
+        }
+        this._settings = null;
+
+        if (this._indicator) {
+            this._indicator.destroy();
+            this._indicator = null;
+        }
+    }
+
+    _getRefreshIntervalSeconds() {
+        const configuredValue = this._settings?.get_int(REFRESH_INTERVAL_KEY) ?? REFRESH_INTERVAL_DEFAULT_SECONDS;
+        return Math.max(
+            REFRESH_INTERVAL_MIN_SECONDS,
+            Math.min(REFRESH_INTERVAL_MAX_SECONDS, configuredValue)
+        );
+    }
+
+    _startRefreshLoop() {
+        this._stopRefreshLoop();
+
+        const intervalSeconds = this._getRefreshIntervalSeconds();
+        this._refreshTimeoutId = GLib.timeout_add_seconds(
+            GLib.PRIORITY_DEFAULT,
+            intervalSeconds,
+            () => {
+                this._indicator?.refreshCount();
+                return GLib.SOURCE_CONTINUE;
+            }
+        );
+    }
+
+    _stopRefreshLoop() {
+        if (this._refreshTimeoutId !== null) {
+            GLib.Source.remove(this._refreshTimeoutId);
+            this._refreshTimeoutId = null;
+        }
+    }
+
+    _restartRefreshLoop() {
+        this._startRefreshLoop();
+        this._indicator?.refreshCount();
+    }
+}

@@ -1,0 +1,9 @@
+.ssh-watchdog-label {
+  margin-left: 6px;
+  min-width: 52px;
+}
+
+.ssh-watchdog-menu-label {
+  max-width: 420px;
+  font-family: monospace;
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ssh-watchdog" path="/org/gnome/shell/extensions/ssh-watchdog/">
+    <key name="refresh-interval" type="i">
+      <default>10</default>
+      <range min="1" max="60"/>
+      <summary>Refresh interval in seconds</summary>
+      <description>How often the extension checks for active SSH sessions.</description>
+    </key>
+  </schema>
+</schemalist>

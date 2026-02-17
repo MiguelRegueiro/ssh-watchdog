@@ -1,0 +1,9 @@
+{
+  "uuid": "ssh-watchdog@miguelregueiro.github.io",
+  "name": "SSH Watchdog",
+  "description": "Shows active SSH sessions in the top bar and exposes session details.",
+  "shell-version": ["45", "46", "47", "48", "49"],
+  "version": 1,
+  "settings-schema": "org.gnome.shell.extensions.ssh-watchdog",
+  "url": "https://github.com/MiguelRegueiro/ssh-watchdog"
+}
