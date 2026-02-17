@@ -57,6 +57,12 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         });
         page.add(appearanceGroup);
 
+        const notificationsGroup = new Adw.PreferencesGroup({
+            title: 'Notifications',
+            description: 'Control connection and disconnection alerts.',
+        });
+        page.add(notificationsGroup);
+
         const iconRow = new Adw.ActionRow({
             title: 'Show Icon',
         });
@@ -89,8 +95,20 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         });
         notificationsRow.add_suffix(notificationsSwitch);
         notificationsRow.activatable_widget = notificationsSwitch;
-        appearanceGroup.add(notificationsRow);
+        notificationsGroup.add(notificationsRow);
 
         settings.bind('show-notifications', notificationsSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const disconnectNotificationsRow = new Adw.ActionRow({
+            title: 'Disconnection Alerts',
+        });
+        const disconnectNotificationsSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        disconnectNotificationsRow.add_suffix(disconnectNotificationsSwitch);
+        disconnectNotificationsRow.activatable_widget = disconnectNotificationsSwitch;
+        notificationsGroup.add(disconnectNotificationsRow);
+
+        settings.bind('show-disconnect-notifications', disconnectNotificationsSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
     }
 }

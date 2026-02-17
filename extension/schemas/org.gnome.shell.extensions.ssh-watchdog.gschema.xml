@@ -22,5 +22,10 @@
       <summary>Show connection notifications</summary>
       <description>Whether to show a notification when new SSH sessions are detected.</description>
     </key>
+    <key name="show-disconnect-notifications" type="b">
+      <default>true</default>
+      <summary>Show disconnection notifications</summary>
+      <description>Whether to show a notification when SSH sessions close.</description>
+    </key>
   </schema>
 </schemalist>

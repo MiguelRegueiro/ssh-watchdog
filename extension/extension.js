@@ -1,10 +1,12 @@
 import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -14,6 +16,7 @@ const REFRESH_INTERVAL_KEY = 'refresh-interval';
 const SHOW_ICON_KEY = 'show-icon';
 const SHOW_PREFIX_KEY = 'show-prefix';
 const SHOW_NOTIFICATIONS_KEY = 'show-notifications';
+const SHOW_DISCONNECT_NOTIFICATIONS_KEY = 'show-disconnect-notifications';
 const REFRESH_INTERVAL_MIN_SECONDS = 1;
 const REFRESH_INTERVAL_MAX_SECONDS = 60;
 const REFRESH_INTERVAL_DEFAULT_SECONDS = 10;
@@ -25,7 +28,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
     constructor() {
         super(0.0, 'SSH Watchdog', false);
         this._lastCount = null;
-        this._lastIPs = new Set();
+        this._lastIPs = [];
         this._showPrefix = true;
         this._count = 0;
 
@@ -87,7 +90,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         }
     }
 
-    refreshCount(showNotifications = true) {
+    refreshCount(showConnectNotifications = true, showDisconnectNotifications = true) {
         const ipOutput = this._runCommand(SSH_UNIQUE_MENU_COMMAND);
         const currentIPs = ipOutput.length > 0
             ? ipOutput.split('\n').filter(line => line.length > 0)
@@ -98,14 +101,19 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._updateIndicatorLabel();
         this._updateWhoOutput(currentIPs);
 
-        if (this._lastCount !== null && count > this._lastCount) {
-            const newIPs = currentIPs.filter(ip => !this._lastIPs.has(ip));
-            if (showNotifications && newIPs.length > 0)
-                this._notifyNewSessions(newIPs);
+        if (this._lastCount !== null) {
+            const connected = currentIPs.filter(ip => !this._lastIPs.includes(ip));
+            const disconnected = this._lastIPs.filter(ip => !currentIPs.includes(ip));
+
+            if (showConnectNotifications && connected.length > 0)
+                this._notifyNewSessions(connected);
+
+            if (showDisconnectNotifications && disconnected.length > 0)
+                this._notifyDisconnectedSessions(disconnected);
         }
 
         this._lastCount = count;
-        this._lastIPs = new Set(currentIPs);
+        this._lastIPs = currentIPs;
     }
 
     refreshWhoOutput() {
@@ -120,12 +128,62 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._whoLabel.text = ips.length > 0 ? ips.join('\n') : 'No active sessions.';
     }
 
+    _notifyWithIcon(title, message, iconName) {
+        const gicon = new Gio.ThemedIcon({name: iconName});
+
+        try {
+            let source;
+            try {
+                source = new MessageTray.Source({
+                    title,
+                    icon: gicon,
+                });
+            } catch {
+                source = new MessageTray.Source(title, iconName);
+            }
+
+            Main.messageTray.add(source);
+
+            let notification;
+            try {
+                notification = new MessageTray.Notification({
+                    source,
+                    title,
+                    body: message,
+                    gicon,
+                    isTransient: true,
+                });
+            } catch {
+                notification = new MessageTray.Notification(source, title, message);
+                notification.setTransient(true);
+            }
+
+            source.addNotification(notification);
+            return;
+        } catch (error) {
+            console.error(`[SSH-Watchdog] Icon notification fallback: ${error?.stack ?? error}`);
+        }
+
+        Main.notify(title, message);
+    }
+
     _notifyNewSessions(newIPs) {
         const plural = newIPs.length === 1 ? '' : 's';
-        Main.notify(
+        this._notifyWithIcon(
             'SSH Watchdog',
-            `New SSH session${plural} from: ${newIPs.join(', ')}`
+            `New SSH session${plural} from: ${newIPs.join(', ')}`,
+            'network-server-symbolic'
         );
+    }
+
+    _notifyDisconnectedSessions(disconnectedIPs) {
+        for (const ip of disconnectedIPs) {
+            this._notifyWithIcon(
+                'SSH Watchdog',
+                `Session closed: ${ip}`,
+                'network-offline-symbolic'
+            );
+        }
     }
 
     _updateIndicatorLabel() {
@@ -214,8 +272,9 @@ export default class SSHWatchdogExtension extends Extension {
             GLib.PRIORITY_DEFAULT,
             intervalSeconds,
             () => {
-                const showNotifications = this._settings?.get_boolean(SHOW_NOTIFICATIONS_KEY) ?? true;
-                this._indicator?.refreshCount(showNotifications);
+                const showConnectNotifications = this._settings?.get_boolean(SHOW_NOTIFICATIONS_KEY) ?? true;
+                const showDisconnectNotifications = this._settings?.get_boolean(SHOW_DISCONNECT_NOTIFICATIONS_KEY) ?? true;
+                this._indicator?.refreshCount(showConnectNotifications, showDisconnectNotifications);
                 return GLib.SOURCE_CONTINUE;
             }
         );
@@ -230,8 +289,9 @@ export default class SSHWatchdogExtension extends Extension {
 
     _restartRefreshLoop() {
         this._startRefreshLoop();
-        const showNotifications = this._settings?.get_boolean(SHOW_NOTIFICATIONS_KEY) ?? true;
-        this._indicator?.refreshCount(showNotifications);
+        const showConnectNotifications = this._settings?.get_boolean(SHOW_NOTIFICATIONS_KEY) ?? true;
+        const showDisconnectNotifications = this._settings?.get_boolean(SHOW_DISCONNECT_NOTIFICATIONS_KEY) ?? true;
+        this._indicator?.refreshCount(showConnectNotifications, showDisconnectNotifications);
     }
 
     _updateUI() {
