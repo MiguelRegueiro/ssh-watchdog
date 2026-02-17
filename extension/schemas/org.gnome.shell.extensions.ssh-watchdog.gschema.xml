@@ -7,5 +7,10 @@
       <summary>Refresh interval in seconds</summary>
       <description>How often the extension checks for active SSH sessions.</description>
     </key>
+    <key name="show-icon" type="b">
+      <default>true</default>
+      <summary>Show indicator icon</summary>
+      <description>Whether to display the SSH Watchdog icon in the panel.</description>
+    </key>
   </schema>
 </schemalist>

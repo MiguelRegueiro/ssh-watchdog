@@ -11,6 +11,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const SETTINGS_SCHEMA_ID = 'org.gnome.shell.extensions.ssh-watchdog';
 const REFRESH_INTERVAL_KEY = 'refresh-interval';
+const SHOW_ICON_KEY = 'show-icon';
 const REFRESH_INTERVAL_MIN_SECONDS = 1;
 const REFRESH_INTERVAL_MAX_SECONDS = 60;
 const REFRESH_INTERVAL_DEFAULT_SECONDS = 10;
@@ -118,6 +119,11 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
             `New SSH session${plural} from: ${newIPs.join(', ')}`
         );
     }
+
+    setAppearance(showIcon) {
+        this._icon.visible = showIcon;
+        this._label.visible = true;
+    }
 });
 
 export default class SSHWatchdogExtension extends Extension {
@@ -125,7 +131,7 @@ export default class SSHWatchdogExtension extends Extension {
         super(metadata);
         this._indicator = null;
         this._settings = null;
-        this._settingsChangedId = null;
+        this._settingsSignalIds = [];
         this._refreshTimeoutId = null;
         this.init();
     }
@@ -136,14 +142,19 @@ export default class SSHWatchdogExtension extends Extension {
     enable() {
         try {
             this._settings = this.getSettings(SETTINGS_SCHEMA_ID);
-            this._settingsChangedId = this._settings.connect(
+            this._settingsSignalIds.push(this._settings.connect(
                 `changed::${REFRESH_INTERVAL_KEY}`,
                 () => this._restartRefreshLoop()
-            );
+            ));
+            this._settingsSignalIds.push(this._settings.connect(
+                `changed::${SHOW_ICON_KEY}`,
+                () => this._updateUI()
+            ));
 
             this._indicator = new SSHWatchdogIndicator();
             Main.panel.addToStatusArea(this.uuid, this._indicator);
 
+            this._updateUI();
             this._indicator.refreshCount();
             this._startRefreshLoop();
         } catch (error) {
@@ -155,10 +166,11 @@ export default class SSHWatchdogExtension extends Extension {
     disable() {
         this._stopRefreshLoop();
 
-        if (this._settings && this._settingsChangedId !== null) {
-            this._settings.disconnect(this._settingsChangedId);
-            this._settingsChangedId = null;
+        if (this._settings) {
+            for (const signalId of this._settingsSignalIds)
+                this._settings.disconnect(signalId);
         }
+        this._settingsSignalIds = [];
         this._settings = null;
 
         if (this._indicator) {
@@ -199,5 +211,13 @@ export default class SSHWatchdogExtension extends Extension {
     _restartRefreshLoop() {
         this._startRefreshLoop();
         this._indicator?.refreshCount();
+    }
+
+    _updateUI() {
+        if (!this._indicator || !this._settings)
+            return;
+
+        const configuredShowIcon = this._settings.get_boolean(SHOW_ICON_KEY);
+        this._indicator.setAppearance(configuredShowIcon);
     }
 }

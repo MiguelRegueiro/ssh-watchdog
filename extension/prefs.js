@@ -50,5 +50,23 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         group.add(intervalRow);
 
         settings.bind('refresh-interval', intervalSpin, 'value', Gio.SettingsBindFlags.DEFAULT);
+
+        const appearanceGroup = new Adw.PreferencesGroup({
+            title: 'Appearance',
+            description: 'Choose which elements are visible in the top bar indicator.',
+        });
+        page.add(appearanceGroup);
+
+        const iconRow = new Adw.ActionRow({
+            title: 'Show Icon',
+        });
+        const iconSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        iconRow.add_suffix(iconSwitch);
+        iconRow.activatable_widget = iconSwitch;
+        appearanceGroup.add(iconRow);
+
+        settings.bind('show-icon', iconSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
     }
 }
