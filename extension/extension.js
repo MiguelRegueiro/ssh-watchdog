@@ -131,12 +131,9 @@ export default class SSHWatchdogExtension extends Extension {
     }
 
     init() {
-        console.log('[SSH-Watchdog] init() called');
     }
 
     enable() {
-        console.log('[SSH-Watchdog] enable() called');
-
         try {
             this._settings = this.getSettings(SETTINGS_SCHEMA_ID);
             this._settingsChangedId = this._settings.connect(
@@ -156,8 +153,6 @@ export default class SSHWatchdogExtension extends Extension {
     }
 
     disable() {
-        console.log('[SSH-Watchdog] disable() called');
-
         this._stopRefreshLoop();
 
         if (this._settings && this._settingsChangedId !== null) {

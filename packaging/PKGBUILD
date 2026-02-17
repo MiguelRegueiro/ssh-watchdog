@@ -1,32 +1,29 @@
 # Maintainer: Your Name <you@example.com>
 pkgname=ssh-watchdog-gnome-extension
-pkgver=0.1.0
+pkgver=1.0.0
 pkgrel=1
 pkgdesc='GNOME extension for monitoring SSH sessions'
 arch=('x86_64')
-url='https://example.invalid/ssh-watchdog'
+url='https://github.com/MiguelRegueiro/ssh-watchdog'
 license=('MIT')
 depends=('gnome-shell')
 optdepends=('openssh: sshd service for SSH session events')
 install='ssh-watchdog.install'
 source=(
-  '../extension/extension.js'
-  '../extension/prefs.js'
-  '../extension/metadata.json'
-  '../extension/stylesheet.css'
-  '../extension/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml'
+  "$url/archive/refs/tags/v$pkgver.tar.gz"
 )
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP')
 
 package() {
-  local uuid='ssh-watchdog@local'
+  local uuid='ssh-watchdog@miguelregueiro.github.io'
+  local srcroot="$srcdir/ssh-watchdog-$pkgver"
 
   # Stage extension payload under /usr/share; install script copies it to user-local extension dir.
-  install -Dm644 "$srcdir/extension.js" "$pkgdir/usr/share/ssh-watchdog/$uuid/extension.js"
-  install -Dm644 "$srcdir/prefs.js" "$pkgdir/usr/share/ssh-watchdog/$uuid/prefs.js"
-  install -Dm644 "$srcdir/metadata.json" "$pkgdir/usr/share/ssh-watchdog/$uuid/metadata.json"
-  install -Dm644 "$srcdir/stylesheet.css" "$pkgdir/usr/share/ssh-watchdog/$uuid/stylesheet.css"
-  install -Dm644 "$srcdir/org.gnome.shell.extensions.ssh-watchdog.gschema.xml" \
+  install -Dm644 "$srcroot/extension/extension.js" "$pkgdir/usr/share/ssh-watchdog/$uuid/extension.js"
+  install -Dm644 "$srcroot/extension/prefs.js" "$pkgdir/usr/share/ssh-watchdog/$uuid/prefs.js"
+  install -Dm644 "$srcroot/extension/metadata.json" "$pkgdir/usr/share/ssh-watchdog/$uuid/metadata.json"
+  install -Dm644 "$srcroot/extension/stylesheet.css" "$pkgdir/usr/share/ssh-watchdog/$uuid/stylesheet.css"
+  install -Dm644 "$srcroot/extension/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml" \
     "$pkgdir/usr/share/ssh-watchdog/$uuid/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml"
 
   glib-compile-schemas "$pkgdir/usr/share/ssh-watchdog/$uuid/schemas"

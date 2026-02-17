@@ -4,6 +4,7 @@
   "description": "Shows active SSH sessions in the top bar and exposes session details.",
   "shell-version": ["45", "46", "47", "48", "49"],
   "version": 1,
+  "version-name": "1.0.0",
   "settings-schema": "org.gnome.shell.extensions.ssh-watchdog",
   "url": "https://github.com/MiguelRegueiro/ssh-watchdog"
 }

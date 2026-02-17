@@ -1,5 +1,5 @@
 post_install() {
-  local uuid='ssh-watchdog@local'
+  local uuid='ssh-watchdog@miguelregueiro.github.io'
   local src="/usr/share/ssh-watchdog/$uuid"
 
   if [[ -n "$SUDO_USER" ]]; then
