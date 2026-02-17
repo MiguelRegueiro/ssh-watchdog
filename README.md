@@ -2,6 +2,12 @@
 
 SSH Watchdog is a self-contained GNOME Shell extension for SSH session visibility.
 
+## Features
+
+- Modern UI: Redesigned "Apple-style" popup menu with symbolic icons and monospaced typography.
+- Smart Notifications: Independent toggles for connection and disconnection alerts with intelligent IP tracking.
+- Customization: Independent controls for icons, "SSH:" prefix, and refresh intervals.
+
 Current behavior:
 - Top bar indicator shows active SSH device count as `SSH: N`.
 - Dropdown menu shows one line per unique remote IPv4 address.

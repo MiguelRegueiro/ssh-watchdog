@@ -10,6 +10,7 @@ post_install() {
       install -d -m755 "$target"
       cp -rf "$src"/. "$target"/
       if [[ -d "$target/schemas" ]]; then
+        # Compile schemas so all settings keys are available after install/upgrade.
         glib-compile-schemas "$target/schemas"
       fi
       chown -R "$SUDO_USER":"$SUDO_USER" "$target"

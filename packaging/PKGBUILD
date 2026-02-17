@@ -26,5 +26,6 @@ package() {
   install -Dm644 "$srcroot/extension/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml" \
     "$pkgdir/usr/share/ssh-watchdog/$uuid/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml"
 
+  # Compile schemas so all settings keys (including notification toggles) are available at runtime.
   glib-compile-schemas "$pkgdir/usr/share/ssh-watchdog/$uuid/schemas"
 }
