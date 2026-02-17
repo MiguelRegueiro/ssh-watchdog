@@ -68,5 +68,17 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         appearanceGroup.add(iconRow);
 
         settings.bind('show-icon', iconSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const prefixRow = new Adw.ActionRow({
+            title: 'Show SSH Prefix',
+        });
+        const prefixSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        prefixRow.add_suffix(prefixSwitch);
+        prefixRow.activatable_widget = prefixSwitch;
+        appearanceGroup.add(prefixRow);
+
+        settings.bind('show-prefix', prefixSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
     }
 }

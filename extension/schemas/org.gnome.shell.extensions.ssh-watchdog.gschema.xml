@@ -12,5 +12,10 @@
       <summary>Show indicator icon</summary>
       <description>Whether to display the SSH Watchdog icon in the panel.</description>
     </key>
+    <key name="show-prefix" type="b">
+      <default>true</default>
+      <summary>Show SSH label prefix</summary>
+      <description>Whether to display the SSH text prefix before the session count.</description>
+    </key>
   </schema>
 </schemalist>

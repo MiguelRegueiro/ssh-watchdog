@@ -12,6 +12,7 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 const SETTINGS_SCHEMA_ID = 'org.gnome.shell.extensions.ssh-watchdog';
 const REFRESH_INTERVAL_KEY = 'refresh-interval';
 const SHOW_ICON_KEY = 'show-icon';
+const SHOW_PREFIX_KEY = 'show-prefix';
 const REFRESH_INTERVAL_MIN_SECONDS = 1;
 const REFRESH_INTERVAL_MAX_SECONDS = 60;
 const REFRESH_INTERVAL_DEFAULT_SECONDS = 10;
@@ -24,6 +25,8 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         super(0.0, 'SSH Watchdog', false);
         this._lastCount = null;
         this._lastIPs = new Set();
+        this._showPrefix = true;
+        this._count = 0;
 
         this._box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
         this._box.set_style('spacing: 0px;');
@@ -90,7 +93,8 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
             : [];
         const count = currentIPs.length;
 
-        this._label.text = `SSH: ${count}`;
+        this._count = count;
+        this._updateIndicatorLabel();
         this._updateWhoOutput(currentIPs);
 
         if (this._lastCount !== null && count > this._lastCount) {
@@ -123,10 +127,16 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         );
     }
 
-    setAppearance(showIcon) {
+    _updateIndicatorLabel() {
+        this._label.text = this._showPrefix ? `SSH: ${this._count}` : `${this._count}`;
+    }
+
+    setAppearance(showIcon, showPrefix) {
         this._icon.visible = showIcon;
+        this._showPrefix = showPrefix;
         this._label.visible = true;
         this._label.set_style('margin-left: 0px;');
+        this._updateIndicatorLabel();
     }
 });
 
@@ -152,6 +162,10 @@ export default class SSHWatchdogExtension extends Extension {
             ));
             this._settingsSignalIds.push(this._settings.connect(
                 `changed::${SHOW_ICON_KEY}`,
+                () => this._updateUI()
+            ));
+            this._settingsSignalIds.push(this._settings.connect(
+                `changed::${SHOW_PREFIX_KEY}`,
                 () => this._updateUI()
             ));
 
@@ -222,6 +236,7 @@ export default class SSHWatchdogExtension extends Extension {
             return;
 
         const configuredShowIcon = this._settings.get_boolean(SHOW_ICON_KEY);
-        this._indicator.setAppearance(configuredShowIcon);
+        const configuredShowPrefix = this._settings.get_boolean(SHOW_PREFIX_KEY);
+        this._indicator.setAppearance(configuredShowIcon, configuredShowPrefix);
     }
 }
