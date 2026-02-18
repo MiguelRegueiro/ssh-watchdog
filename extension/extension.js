@@ -10,7 +10,6 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const SETTINGS_SCHEMA_ID = 'org.gnome.shell.extensions.ssh-watchdog';
 const REFRESH_INTERVAL_KEY = 'refresh-interval';
 const SHOW_ICON_KEY = 'show-icon';
 const SHOW_PREFIX_KEY = 'show-prefix';
@@ -19,8 +18,6 @@ const SHOW_DISCONNECT_NOTIFICATIONS_KEY = 'show-disconnect-notifications';
 const REFRESH_INTERVAL_MIN_SECONDS = 1;
 const REFRESH_INTERVAL_MAX_SECONDS = 60;
 const REFRESH_INTERVAL_DEFAULT_SECONDS = 10;
-const DECODER = new TextDecoder();
-const SSH_UNIQUE_MENU_COMMAND = "/usr/bin/who | /usr/bin/grep -oP '\\(\\K[\\d\\.]+' | /usr/bin/sort -u";
 
 const SSHWatchdogIndicator = GObject.registerClass(
 class SSHWatchdogIndicator extends PanelMenu.Button {
@@ -30,6 +27,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._lastIPs = [];
         this._showPrefix = true;
         this._count = 0;
+        this._sshUniqueMenuCommand = "/usr/bin/who | /usr/bin/grep -oP '\\(\\K[\\d\\.]+' | /usr/bin/sort -u";
 
         this._box = new St.BoxLayout({
             style_class: 'panel-status-indicators-box',
@@ -86,55 +84,78 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
     }
 
     _runCommand(command) {
-        try {
-            // Use sync spawn to avoid D-Bus/systemd transient-scope issues in nested sessions.
-            const escapedCommand = GLib.shell_quote(command);
-            const shellCommand = `/bin/bash -c ${escapedCommand}`;
-            const [success, stdout, stderr] = GLib.spawn_command_line_sync(shellCommand);
-            if (!success) {
-                const stderrText = stderr ? DECODER.decode(stderr).trim() : '';
-                console.error(`[SSH-Watchdog] Command failed: ${command} :: ${stderrText}`);
-                return '';
+        return new Promise(resolve => {
+            try {
+                const subprocess = Gio.Subprocess.new(
+                    ['/bin/bash', '-c', command],
+                    Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+                );
+
+                subprocess.communicate_utf8_async(null, null, (proc, res) => {
+                    try {
+                        const [, stdout, stderr] = proc.communicate_utf8_finish(res);
+                        if (!proc.get_successful()) {
+                            const stderrText = (stderr ?? '').trim();
+                            console.error(`[SSH-Watchdog] Command failed: ${command} :: ${stderrText}`);
+                            resolve('');
+                            return;
+                        }
+
+                        resolve((stdout ?? '').trim());
+                    } catch (error) {
+                        console.error(`[SSH-Watchdog] Spawn error: ${error?.stack ?? error}`);
+                        resolve('');
+                    }
+                });
+            } catch (error) {
+                console.error(`[SSH-Watchdog] Spawn error: ${error?.stack ?? error}`);
+                resolve('');
             }
-            return stdout ? DECODER.decode(stdout).trim() : '';
+        });
+    }
+
+    _extractIPs(ipOutput) {
+        return ipOutput.length > 0
+            ? ipOutput.split('\n').filter(line => line.length > 0)
+            : [];
+    }
+
+    async refreshCount(showConnectNotifications = true, showDisconnectNotifications = true) {
+        try {
+            const ipOutput = await this._runCommand(this._sshUniqueMenuCommand);
+            const currentIPs = this._extractIPs(ipOutput);
+            const count = currentIPs.length;
+
+            this._count = count;
+            this._updateIndicatorLabel();
+            this._updateWhoOutput(currentIPs);
+
+            if (this._lastCount !== null) {
+                const connected = currentIPs.filter(ip => !this._lastIPs.includes(ip));
+                const disconnected = this._lastIPs.filter(ip => !currentIPs.includes(ip));
+
+                if (showConnectNotifications && connected.length > 0)
+                    this._notifyNewSessions(connected);
+
+                if (showDisconnectNotifications && disconnected.length > 0)
+                    this._notifyDisconnectedSessions(disconnected);
+            }
+
+            this._lastCount = count;
+            this._lastIPs = currentIPs;
         } catch (error) {
-            console.error(`[SSH-Watchdog] Spawn error: ${error?.stack ?? error}`);
-            return '';
+            console.error(`[SSH-Watchdog] refreshCount() failed: ${error?.stack ?? error}`);
         }
     }
 
-    refreshCount(showConnectNotifications = true, showDisconnectNotifications = true) {
-        const ipOutput = this._runCommand(SSH_UNIQUE_MENU_COMMAND);
-        const currentIPs = ipOutput.length > 0
-            ? ipOutput.split('\n').filter(line => line.length > 0)
-            : [];
-        const count = currentIPs.length;
-
-        this._count = count;
-        this._updateIndicatorLabel();
-        this._updateWhoOutput(currentIPs);
-
-        if (this._lastCount !== null) {
-            const connected = currentIPs.filter(ip => !this._lastIPs.includes(ip));
-            const disconnected = this._lastIPs.filter(ip => !currentIPs.includes(ip));
-
-            if (showConnectNotifications && connected.length > 0)
-                this._notifyNewSessions(connected);
-
-            if (showDisconnectNotifications && disconnected.length > 0)
-                this._notifyDisconnectedSessions(disconnected);
+    async refreshWhoOutput() {
+        try {
+            const ipOutput = await this._runCommand(this._sshUniqueMenuCommand);
+            const currentIPs = this._extractIPs(ipOutput);
+            this._updateWhoOutput(currentIPs);
+        } catch (error) {
+            console.error(`[SSH-Watchdog] refreshWhoOutput() failed: ${error?.stack ?? error}`);
         }
-
-        this._lastCount = count;
-        this._lastIPs = currentIPs;
-    }
-
-    refreshWhoOutput() {
-        const ipOutput = this._runCommand(SSH_UNIQUE_MENU_COMMAND);
-        const currentIPs = ipOutput.length > 0
-            ? ipOutput.split('\n').filter(line => line.length > 0)
-            : [];
-        this._updateWhoOutput(currentIPs);
     }
 
     _updateWhoOutput(ips) {
@@ -259,29 +280,21 @@ export default class SSHWatchdogExtension extends Extension {
         super(metadata);
         this._indicator = null;
         this._settings = null;
-        this._settingsSignalIds = [];
         this._refreshTimeoutId = null;
-        this.init();
-    }
-
-    init() {
     }
 
     enable() {
         try {
-            this._settings = this.getSettings(SETTINGS_SCHEMA_ID);
-            this._settingsSignalIds.push(this._settings.connect(
+            this._settings = this.getSettings();
+            this._settings.connectObject(
                 `changed::${REFRESH_INTERVAL_KEY}`,
-                () => this._restartRefreshLoop()
-            ));
-            this._settingsSignalIds.push(this._settings.connect(
+                () => this._restartRefreshLoop(),
                 `changed::${SHOW_ICON_KEY}`,
-                () => this._updateUI()
-            ));
-            this._settingsSignalIds.push(this._settings.connect(
+                () => this._updateUI(),
                 `changed::${SHOW_PREFIX_KEY}`,
-                () => this._updateUI()
-            ));
+                () => this._updateUI(),
+                this
+            );
 
             this._indicator = new SSHWatchdogIndicator();
             Main.panel.addToStatusArea(this.uuid, this._indicator);
@@ -298,11 +311,7 @@ export default class SSHWatchdogExtension extends Extension {
     disable() {
         this._stopRefreshLoop();
 
-        if (this._settings) {
-            for (const signalId of this._settingsSignalIds)
-                this._settings.disconnect(signalId);
-        }
-        this._settingsSignalIds = [];
+        this._settings?.disconnectObject(this);
         this._settings = null;
 
         if (this._indicator) {

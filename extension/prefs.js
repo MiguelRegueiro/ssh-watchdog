@@ -4,11 +4,9 @@ import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-const SETTINGS_SCHEMA_ID = 'org.gnome.shell.extensions.ssh-watchdog';
-
 export default class SSHWatchdogPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
-        const settings = this.getSettings(SETTINGS_SCHEMA_ID);
+        const settings = this.getSettings();
 
         const page = new Adw.PreferencesPage({
             title: 'General',
@@ -22,34 +20,23 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         });
         page.add(group);
 
-        const intervalRow = new Adw.ActionRow({
+        const intervalRow = new Adw.SpinRow({
             title: 'Refresh Interval',
-        });
-
-        const intervalSpin = new Gtk.SpinButton({
+            subtitle: 'seconds',
             adjustment: new Gtk.Adjustment({
                 lower: 1,
                 upper: 60,
                 step_increment: 1,
                 page_increment: 5,
             }),
+            climb_rate: 1,
             digits: 0,
             numeric: true,
-            valign: Gtk.Align.CENTER,
+            snap_to_ticks: true,
         });
-
-        const secondsLabel = new Gtk.Label({
-            label: 'seconds',
-            valign: Gtk.Align.CENTER,
-            css_classes: ['dim-label'],
-        });
-
-        intervalRow.add_suffix(intervalSpin);
-        intervalRow.add_suffix(secondsLabel);
-        intervalRow.activatable_widget = intervalSpin;
         group.add(intervalRow);
 
-        settings.bind('refresh-interval', intervalSpin, 'value', Gio.SettingsBindFlags.DEFAULT);
+        settings.bind('refresh-interval', intervalRow, 'value', Gio.SettingsBindFlags.DEFAULT);
 
         const appearanceGroup = new Adw.PreferencesGroup({
             title: 'Appearance',
