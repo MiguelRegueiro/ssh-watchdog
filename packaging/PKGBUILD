@@ -1,6 +1,6 @@
 # Maintainer: Miguel Regueiro <miguelregueiro@users.noreply.github.com>
 pkgname=ssh-watchdog-gnome-extension
-pkgver=1.0.2
+pkgver=1.0.3
 pkgrel=1
 pkgdesc='GNOME extension for monitoring SSH sessions'
 arch=('x86_64')
