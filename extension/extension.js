@@ -28,6 +28,10 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._showPrefix = true;
         this._count = 0;
         this._sshUniqueMenuCommand = "/usr/bin/who | /usr/bin/grep -oP '\\(\\K[\\d\\.]+' | /usr/bin/sort -u";
+        this._refreshInProgress = false;
+        this._menuRefreshInProgress = false;
+        this._notificationSource = null;
+        this._destroyed = false;
 
         this._box = new St.BoxLayout({
             style_class: 'panel-status-indicators-box',
@@ -77,10 +81,10 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
 
         this._updateWhoOutput([]);
 
-        this.menu.connect('open-state-changed', (_menu, isOpen) => {
+        this.menu.connectObject('open-state-changed', (_menu, isOpen) => {
             if (isOpen)
                 this.refreshWhoOutput();
-        });
+        }, this);
     }
 
     _runCommand(command) {
@@ -121,8 +125,16 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
     }
 
     async refreshCount(showConnectNotifications = true, showDisconnectNotifications = true) {
+        if (this._destroyed || this._refreshInProgress)
+            return;
+
+        this._refreshInProgress = true;
+
         try {
             const ipOutput = await this._runCommand(this._sshUniqueMenuCommand);
+            if (this._destroyed)
+                return;
+
             const currentIPs = this._extractIPs(ipOutput);
             const count = currentIPs.length;
 
@@ -145,16 +157,28 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
             this._lastIPs = currentIPs;
         } catch (error) {
             console.error(`[SSH-Watchdog] refreshCount() failed: ${error?.stack ?? error}`);
+        } finally {
+            this._refreshInProgress = false;
         }
     }
 
     async refreshWhoOutput() {
+        if (this._destroyed || this._menuRefreshInProgress)
+            return;
+
+        this._menuRefreshInProgress = true;
+
         try {
             const ipOutput = await this._runCommand(this._sshUniqueMenuCommand);
+            if (this._destroyed)
+                return;
+
             const currentIPs = this._extractIPs(ipOutput);
             this._updateWhoOutput(currentIPs);
         } catch (error) {
             console.error(`[SSH-Watchdog] refreshWhoOutput() failed: ${error?.stack ?? error}`);
+        } finally {
+            this._menuRefreshInProgress = false;
         }
     }
 
@@ -204,21 +228,30 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         return item;
     }
 
+    _getNotificationSource(title, gicon, iconName) {
+        if (this._notificationSource)
+            return this._notificationSource;
+
+        let source;
+        try {
+            source = new MessageTray.Source({
+                title,
+                icon: gicon,
+            });
+        } catch {
+            source = new MessageTray.Source(title, iconName);
+        }
+
+        Main.messageTray.add(source);
+        this._notificationSource = source;
+        return source;
+    }
+
     _notifyWithIcon(title, message, iconName) {
         const gicon = new Gio.ThemedIcon({name: iconName});
 
         try {
-            let source;
-            try {
-                source = new MessageTray.Source({
-                    title,
-                    icon: gicon,
-                });
-            } catch {
-                source = new MessageTray.Source(title, iconName);
-            }
-
-            Main.messageTray.add(source);
+            const source = this._getNotificationSource(title, gicon, iconName);
 
             let notification;
             try {
@@ -272,6 +305,18 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._label.visible = true;
         this._label.set_style('margin-left: 0px;');
         this._updateIndicatorLabel();
+    }
+
+    destroy() {
+        this._destroyed = true;
+        this.menu?.disconnectObject(this);
+
+        if (this._notificationSource) {
+            this._notificationSource.destroy();
+            this._notificationSource = null;
+        }
+
+        super.destroy();
     }
 });
 
