@@ -15,10 +15,9 @@ SSH Watchdog is a self-contained GNOME Shell extension for SSH session visibilit
 
 ## Features
 
-- Modern UI: Redesigned "Apple-style" popup menu with symbolic icons and monospaced typography.
-- Session Visibility: Top bar indicator can show active SSH session count as `SSH: N`, and the dropdown lists one line per unique remote IPv4 address.
-- Smart Notifications: Independent toggles for connection and disconnection alerts with IP-aware state tracking to avoid polling noise.
-- Customization: Independent controls for the indicator icon, `SSH:` label prefix, and polling interval (`1-60` seconds, default `10`).
+- **Comprehensive Session Visibility:** Features a high-visibility top-bar indicator displaying active SSH session counts (e.g., SSH: N) and a monospaced dropdown menu. This interface itemizes unique remote IPv4 addresses using symbolic iconography and a modern, layout optimized for both aesthetic appeal and rapid technical legibility.
+- **Intelligent Notification System:** Provides independent toggles for connection and disconnection alerts, featuring IP-aware state tracking to minimize redundant notifications and optimize user experience.
+- **Customization Options:** Provides independent toggles to enable or disable the indicator icon and the SSH: text label for a personalized top-bar footprint. Additionally, users can calibrate the background polling frequency between 1 and 60 seconds (defaulting to 10 seconds) to balance real-time responsiveness with system resource efficiency.
 
 ## How It Works
 
