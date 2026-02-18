@@ -21,15 +21,16 @@ SSH Watchdog is a self-contained GNOME Shell extension for SSH session visibilit
 
 ## How It Works
 
-Single component:
+Single runtime component:
 
 1. GNOME extension (`extension/extension.js`)
-- Polls using user-configurable interval via GSettings.
-- Uses: `who | grep -oP '\(\K[\d\.]+' | sort -u`
-- Extracts IPv4 inside parentheses from `who` output.
-- Tracks previous state (`lastCount` + last seen IP set).
-- Sends notifications through GNOME Shell (`Main.notify`) for connection and disconnection events based on state transitions.
-- Reacts live to preference changes without needing GNOME Shell restart.
+- Polls on a user-configurable GSettings interval (`1-60s`, default `10s`).
+- Executes the session parser command asynchronously with `Gio.Subprocess`.
+- Uses `communicate_utf8_async` for non-blocking shell command execution.
+- Parses unique IPv4 sources from: `who | grep -oP '\(\K[\d\.]+' | sort -u`.
+- Tracks session state transitions (`lastCount` + previous IP set) to detect connects/disconnects.
+- Uses `connectObject()` and `disconnectObject()` for signal lifecycle management and cleanup.
+- Applies preference changes live without GNOME Shell restart.
 
 ## Project Layout
 
@@ -44,7 +45,7 @@ Single component:
 
 ## Compatibility
 
-- GNOME Shell versions declared: `45`, `46`, `47`, `48`, `49`.
+- Optimized for GNOME Shell `45` through `49` (declared in `metadata.json`).
 - Requires `sshd` for SSH sessions and `who` command availability.
 - `grep -P` is used for regex extraction.
 
@@ -71,3 +72,14 @@ For local/manual installation instructions, see `INSTALL.md`.
 - It fetches release tarballs from:
   - `https://github.com/MiguelRegueiro/ssh-watchdog`
 - Schemas are compiled during packaging and in the install hook.
+
+## Changelog
+
+### v1.0.3
+
+- Refactored command execution to an asynchronous model using `Gio.Subprocess` + `communicate_utf8_async`.
+- Replaced manual signal ID tracking with `connectObject()` / `disconnectObject()`.
+- Removed `schemas/gschemas.compiled` from extension payload (GNOME 45+ compliant packaging).
+- Updated settings access to parameterless `getSettings()` based on `metadata.json`.
+- Improved runtime lifecycle cleanup for disable/destroy paths and async guard handling.
+- Updated preferences interval control to `Adw.SpinRow` for a modern Adwaita UI flow.
