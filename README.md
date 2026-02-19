@@ -1,77 +1,91 @@
-# SSH Watchdog GNOME Extension
+# SSH Watchdog
 
 <p align="center">
   <img src="screenshots/ssh-watchdog-gnome-extension.png" width="800" alt="SSH Watchdog GNOME Extension">
 </p>
 
-SSH Watchdog is a self-contained GNOME Shell extension for SSH session visibility.
+SSH Watchdog is a GNOME Shell extension that shows active SSH connections in the top bar, including unique client IPs and optional connect/disconnect notifications.
 
-## Interface
+## Install
 
-|  |  |
-|---|---|
-| <sub>Idle State</sub><br><img src="screenshots/ssh-watchdog-01-idle.png" width="400" alt="Idle State"> | <sub>Session Details</sub><br><img src="screenshots/ssh-watchdog-03-active-sessions.png" width="400" alt="Session Details"> |
-| <sub>Native Notifications</sub><br><img src="screenshots/ssh-watchdog-02-notification.png" width="400" alt="Native Notifications"> | <sub>Configuration</sub><br><img src="screenshots/ssh-watchdog-04-preferences.png" width="400" alt="Configuration"> |
+- Recommended: install from GNOME Extensions (EGO) using Extension Manager:
+  `https://extensions.gnome.org/extension/9343/ssh-watchdog/`
+- Updates and removal are handled directly in Extension Manager.
 
 ## Features
 
-- **Comprehensive Session Visibility:** Features a high-visibility top-bar indicator displaying active SSH session counts (e.g., SSH: N) and a monospaced dropdown menu. This interface itemizes unique remote IPv4 addresses using symbolic iconography and a modern, layout optimized for both aesthetic appeal and rapid technical legibility.
-- **Intelligent Notification System:** Provides independent toggles for connection and disconnection alerts, featuring IP-aware state tracking to minimize redundant notifications and optimize user experience.
-- **Customization Options:** Provides independent toggles to enable or disable the indicator icon and the SSH: text label for a personalized top-bar footprint. Additionally, users can calibrate the background polling frequency between 1 and 60 seconds (defaulting to 10 seconds) to balance real-time responsiveness with system resource efficiency.
+- Top-bar indicator with live SSH session count.
+- Dropdown menu listing unique active client IPv4 addresses.
+- Optional notifications for new connections and closed sessions.
+- Configurable refresh interval (`1` to `60` seconds).
+- Appearance toggles for icon and `SSH:` label prefix.
+- Menu refresh when opened, in addition to interval polling.
 
-## How It Works
+## Screenshots
 
-Single runtime component:
+| **Idle State** | **Session Details** |
+|---|---|
+| <img src="screenshots/ssh-watchdog-01-idle.png" width="400" alt="Idle State"> | <img src="screenshots/ssh-watchdog-03-active-sessions.png" width="400" alt="Session Details"> |
 
-1. GNOME extension (`extension/extension.js`)
-- Polls on a user-configurable GSettings interval (`1-60s`, default `10s`).
-- Executes the session parser command asynchronously with `Gio.Subprocess`.
-- Uses `communicate_utf8_async` for non-blocking shell command execution.
-- Parses unique IPv4 sources from: `who | grep -oP '\(\K[\d\.]+' | sort -u`.
-- Tracks session state transitions (`lastCount` + previous IP set) to detect connects/disconnects.
-- Uses `connectObject()` and `disconnectObject()` for signal lifecycle management and cleanup.
-- Applies preference changes live without GNOME Shell restart.
-
-## Project Layout
-
-- `extension/extension.js`: main GNOME extension logic + notification handling.
-- `extension/prefs.js`: Adwaita-based preferences window.
-- `extension/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml`: settings schema.
-- `extension/metadata.json`: extension metadata (UUID, name, shell compatibility).
-- `extension/stylesheet.css`: UI styles.
-- `INSTALL.md`: manual installation instructions.
-- `LICENSE`: project license (GPL-3.0-or-later).
+| **Connection Notification** | **Preferences** |
+|---|---|
+| <img src="screenshots/ssh-watchdog-02-notification.png" width="400" alt="Connection Notification"> | <img src="screenshots/ssh-watchdog-04-preferences.png" width="400" alt="Preferences"> |
 
 ## Compatibility
 
-- Optimized for GNOME Shell `45` through `49` (declared in `metadata.json`).
-- Requires `sshd` for SSH sessions and `who` command availability.
-- `grep -P` is used for regex extraction.
+- GNOME Shell `45` through `49`.
+- Uses local `who` output as the SSH session data source.
+
+## Runtime Requirements
+
+- `/bin/bash`
+- `/usr/bin/who`
+- `/usr/bin/grep` with PCRE support (`grep -P`)
+- `/usr/bin/sort`
+- Active SSH logins represented in `who` output
+
+The current parser command is:
+`/usr/bin/who | /usr/bin/grep -oP '\(\K[\d\.]+' | /usr/bin/sort -u`
+
+## Preferences (Defaults)
+
+- Refresh interval: `10` seconds (range `1-60`).
+- Show icon: `true`.
+- Show SSH prefix: `true`.
+- Show notifications: `true`.
+- Show disconnection alerts: `true`.
+
+## Privacy and Data Handling
+
+- No telemetry.
+- No outbound network calls.
+- Session information is derived locally from the system `who` command output.
 
 ## Known Limitations
 
-- Current parser intentionally targets IPv4 only (`[\d\.]+`).
-- IPv6-only remote hosts are not shown with the current command.
-- UI state depends on `who`; if a session is not represented there, it will not appear in the extension.
+- Session parsing currently targets IPv4 addresses only.
+- IPv6-only remote hosts are not listed.
+- If a session is not reported by `who`, it will not appear in the extension.
+- Connect/disconnect notifications start after the first polling baseline is established.
 
-## Debugging
+## Support
 
-- GNOME Shell logs:
+- Report issues: `https://github.com/MiguelRegueiro/ssh-watchdog/issues`
+- For diagnostics, collect GNOME Shell logs with:
+
 ```bash
 journalctl -f -o cat /usr/bin/gnome-shell
 ```
 
-## Installation
+## Project Layout
 
-For local/manual installation instructions, see `INSTALL.md`.
+- `extension/extension.js`: main extension runtime and notification logic.
+- `extension/prefs.js`: Adwaita preferences UI.
+- `extension/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml`: GSettings schema.
+- `extension/metadata.json`: extension metadata (UUID, shell compatibility, version).
+- `extension/stylesheet.css`: extension styles.
+- `LICENSE`: project license (`GPL-3.0-or-later`).
 
-## Changelog
+## License
 
-### v1.0.3
-
-- Refactored command execution to an asynchronous model using `Gio.Subprocess` + `communicate_utf8_async`.
-- Replaced manual signal ID tracking with `connectObject()` / `disconnectObject()`.
-- Removed `schemas/gschemas.compiled` from extension payload (GNOME 45+ compliant packaging).
-- Updated settings access to parameterless `getSettings()` based on `metadata.json`.
-- Improved runtime lifecycle cleanup for disable/destroy paths and async guard handling.
-- Updated preferences interval control to `Adw.SpinRow` for a modern Adwaita UI flow.
+This project is licensed under `GPL-3.0-or-later`. See `LICENSE`.
