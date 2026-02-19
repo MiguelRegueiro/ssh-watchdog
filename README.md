@@ -41,7 +41,6 @@ Single runtime component:
 - `extension/stylesheet.css`: UI styles.
 - `INSTALL.md`: manual installation instructions.
 - `LICENSE`: project license (GPL-3.0-or-later).
-- `packaging/`: PKGBUILD/install hooks.
 
 ## Compatibility
 
@@ -65,13 +64,6 @@ journalctl -f -o cat /usr/bin/gnome-shell
 ## Installation
 
 For local/manual installation instructions, see `INSTALL.md`.
-
-## Packaging
-
-- PKGBUILD is in `packaging/PKGBUILD`.
-- It fetches release tarballs from:
-  - `https://github.com/MiguelRegueiro/ssh-watchdog`
-- Schemas are compiled during packaging and in the install hook.
 
 ## Changelog
 
