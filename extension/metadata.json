@@ -4,7 +4,6 @@
   "description": "Shows active SSH connections in the GNOME top bar with client IPs, plus optional connect/disconnect notifications and configurable polling.",
   "shell-version": ["45", "46", "47", "48", "49"],
   "version": 4,
-  "version-name": "1.0.3",
   "settings-schema": "org.gnome.shell.extensions.ssh-watchdog",
   "url": "https://github.com/MiguelRegueiro/ssh-watchdog"
 }
