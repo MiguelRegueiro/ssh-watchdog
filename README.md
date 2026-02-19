@@ -40,7 +40,7 @@ Single runtime component:
 - `extension/metadata.json`: extension metadata (UUID, name, shell compatibility).
 - `extension/stylesheet.css`: UI styles.
 - `INSTALL.md`: manual installation instructions.
-- `LICENSE`: project license (MIT).
+- `LICENSE`: project license (GPL-3.0-or-later).
 - `packaging/`: PKGBUILD/install hooks.
 
 ## Compatibility
