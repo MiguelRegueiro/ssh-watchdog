@@ -5,7 +5,6 @@ import GObject from 'gi://GObject';
 import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -27,10 +26,10 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._lastIPs = [];
         this._showPrefix = true;
         this._count = 0;
-        this._sshUniqueMenuCommand = "/usr/bin/who | /usr/bin/grep -oP '\\(\\K[\\d\\.]+' | /usr/bin/sort -u";
+        this._whoCommand = GLib.find_program_in_path('who');
+        this._whoMissingLogged = false;
         this._refreshInProgress = false;
         this._menuRefreshInProgress = false;
-        this._notificationSource = null;
         this._destroyed = false;
 
         this._box = new St.BoxLayout({
@@ -87,11 +86,20 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         }, this);
     }
 
-    _runCommand(command) {
+    _runWhoCommand() {
         return new Promise(resolve => {
+            if (!this._whoCommand) {
+                if (!this._whoMissingLogged) {
+                    console.error('[SSH-Watchdog] `who` command not found in PATH.');
+                    this._whoMissingLogged = true;
+                }
+                resolve('');
+                return;
+            }
+
             try {
                 const subprocess = Gio.Subprocess.new(
-                    ['/bin/bash', '-c', command],
+                    [this._whoCommand],
                     Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
                 );
 
@@ -100,7 +108,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
                         const [, stdout, stderr] = proc.communicate_utf8_finish(res);
                         if (!proc.get_successful()) {
                             const stderrText = (stderr ?? '').trim();
-                            console.error(`[SSH-Watchdog] Command failed: ${command} :: ${stderrText}`);
+                            console.error(`[SSH-Watchdog] who command failed: ${this._whoCommand} :: ${stderrText}`);
                             resolve('');
                             return;
                         }
@@ -118,10 +126,40 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         });
     }
 
-    _extractIPs(ipOutput) {
-        return ipOutput.length > 0
-            ? ipOutput.split('\n').filter(line => line.length > 0)
-            : [];
+    _normalizeRemoteAddress(remoteAddress) {
+        let candidate = remoteAddress.trim();
+
+        if (candidate.startsWith('[') && candidate.endsWith(']'))
+            candidate = candidate.slice(1, -1);
+
+        const zoneIndex = candidate.indexOf('%');
+        if (zoneIndex > 0)
+            candidate = candidate.slice(0, zoneIndex);
+
+        return candidate;
+    }
+
+    _extractIPAddressesFromWhoOutput(whoOutput) {
+        if (whoOutput.length === 0)
+            return [];
+
+        const addresses = new Set();
+
+        for (const line of whoOutput.split('\n')) {
+            const trimmedLine = line.trim();
+            if (trimmedLine.length === 0)
+                continue;
+
+            const remoteMatch = trimmedLine.match(/\(([^)]+)\)\s*$/);
+            if (!remoteMatch)
+                continue;
+
+            const address = this._normalizeRemoteAddress(remoteMatch[1]);
+            if (GLib.hostname_is_ip_address(address))
+                addresses.add(address);
+        }
+
+        return Array.from(addresses).sort((a, b) => a.localeCompare(b));
     }
 
     async refreshCount(showConnectNotifications = true, showDisconnectNotifications = true) {
@@ -131,11 +169,11 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._refreshInProgress = true;
 
         try {
-            const ipOutput = await this._runCommand(this._sshUniqueMenuCommand);
+            const whoOutput = await this._runWhoCommand();
             if (this._destroyed)
                 return;
 
-            const currentIPs = this._extractIPs(ipOutput);
+            const currentIPs = this._extractIPAddressesFromWhoOutput(whoOutput);
             const count = currentIPs.length;
 
             this._count = count;
@@ -143,8 +181,10 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
             this._updateWhoOutput(currentIPs);
 
             if (this._lastCount !== null) {
-                const connected = currentIPs.filter(ip => !this._lastIPs.includes(ip));
-                const disconnected = this._lastIPs.filter(ip => !currentIPs.includes(ip));
+                const previousIPs = new Set(this._lastIPs);
+                const currentIPSet = new Set(currentIPs);
+                const connected = currentIPs.filter(ip => !previousIPs.has(ip));
+                const disconnected = this._lastIPs.filter(ip => !currentIPSet.has(ip));
 
                 if (showConnectNotifications && connected.length > 0)
                     this._notifyNewSessions(connected);
@@ -169,11 +209,11 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         this._menuRefreshInProgress = true;
 
         try {
-            const ipOutput = await this._runCommand(this._sshUniqueMenuCommand);
+            const whoOutput = await this._runWhoCommand();
             if (this._destroyed)
                 return;
 
-            const currentIPs = this._extractIPs(ipOutput);
+            const currentIPs = this._extractIPAddressesFromWhoOutput(whoOutput);
             this._updateWhoOutput(currentIPs);
         } catch (error) {
             console.error(`[SSH-Watchdog] refreshWhoOutput() failed: ${error?.stack ?? error}`);
@@ -188,7 +228,7 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         if (ips.length === 0) {
             this._sessionsSection.addMenuItem(this._createSessionItem(
                 'No active sessions',
-                'security-low-symbolic',
+                'network-idle-symbolic',
                 true
             ));
             return;
@@ -228,69 +268,23 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         return item;
     }
 
-    _getNotificationSource(title, gicon, iconName) {
-        if (this._notificationSource)
-            return this._notificationSource;
-
-        let source;
-        try {
-            source = new MessageTray.Source({
-                title,
-                icon: gicon,
-            });
-        } catch {
-            source = new MessageTray.Source(title, iconName);
-        }
-
-        Main.messageTray.add(source);
-        this._notificationSource = source;
-        return source;
-    }
-
-    _notifyWithIcon(title, message, iconName) {
-        const gicon = new Gio.ThemedIcon({name: iconName});
-
-        try {
-            const source = this._getNotificationSource(title, gicon, iconName);
-
-            let notification;
-            try {
-                notification = new MessageTray.Notification({
-                    source,
-                    title,
-                    body: message,
-                    gicon,
-                    isTransient: true,
-                });
-            } catch {
-                notification = new MessageTray.Notification(source, title, message);
-                notification.setTransient(true);
-            }
-
-            source.addNotification(notification);
-            return;
-        } catch (error) {
-            console.error(`[SSH-Watchdog] Icon notification fallback: ${error?.stack ?? error}`);
-        }
-
+    _notify(title, message) {
         Main.notify(title, message);
     }
 
     _notifyNewSessions(newIPs) {
         const plural = newIPs.length === 1 ? '' : 's';
-        this._notifyWithIcon(
+        this._notify(
             'SSH Watchdog',
-            `New SSH session${plural} from: ${newIPs.join(', ')}`,
-            'network-server-symbolic'
+            `New SSH session${plural} from: ${newIPs.join(', ')}`
         );
     }
 
     _notifyDisconnectedSessions(disconnectedIPs) {
         for (const ip of disconnectedIPs) {
-            this._notifyWithIcon(
+            this._notify(
                 'SSH Watchdog',
-                `Session closed: ${ip}`,
-                'network-offline-symbolic'
+                `Session closed: ${ip}`
             );
         }
     }
@@ -310,11 +304,6 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
     destroy() {
         this._destroyed = true;
         this.menu?.disconnectObject(this);
-
-        if (this._notificationSource) {
-            this._notificationSource.destroy();
-            this._notificationSource = null;
-        }
 
         super.destroy();
     }

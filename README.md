@@ -21,8 +21,8 @@
 ## Features
 
 - Top-bar indicator with live SSH session count.
-- Dropdown menu listing unique active client IPv4 addresses.
-- Optional notifications for new connections and closed sessions.
+- Dropdown menu listing unique active client IPv4 and IPv6 addresses.
+- Optional notifications for newly seen remote addresses and closed address sessions.
 - Configurable refresh interval (`1` to `60` seconds).
 - Appearance toggles for icon and `SSH:` label prefix.
 - Menu refresh when opened, in addition to interval polling.
@@ -44,14 +44,8 @@
 
 ## Runtime Requirements
 
-- `/bin/bash`
-- `/usr/bin/who`
-- `/usr/bin/grep` with PCRE support (`grep -P`)
-- `/usr/bin/sort`
+- `who` available in `PATH`
 - Active SSH logins represented in `who` output
-
-The current parser command is:
-`/usr/bin/who | /usr/bin/grep -oP '\(\K[\d\.]+' | /usr/bin/sort -u`
 
 ## Preferences (Defaults)
 
@@ -69,10 +63,11 @@ The current parser command is:
 
 ## Known Limitations
 
-- Session parsing currently targets IPv4 addresses only.
-- IPv6-only remote hosts are not listed.
 - If a session is not reported by `who`, it will not appear in the extension.
+- Entries where `who` reports only hostnames (not IP addresses) are ignored.
 - Connect/disconnect notifications start after the first polling baseline is established.
+- Disconnection alerts are address-based: closing one of multiple sessions from the same address may not trigger an alert.
+- Notifications are delivered through GNOME Shell's system notification source.
 
 ## Support
 
