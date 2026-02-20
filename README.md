@@ -1,10 +1,16 @@
-# SSH Watchdog
+<h1 align="center"><img src="assets/images/ssh-watchdog-logo-256.png" width="42" alt="SSH Watchdog logo" align="absmiddle" />&nbsp;SSH Watchdog</h1>
 
 <p align="center">
-  <img src="screenshots/ssh-watchdog-gnome-extension.png" width="800" alt="SSH Watchdog GNOME Extension">
+  Shows active SSH sessions in the GNOME top bar.
 </p>
 
-SSH Watchdog is a GNOME Shell extension that shows active SSH connections in the top bar, including unique client IPs and optional connect/disconnect notifications.
+<p align="center">
+  <a href="https://extensions.gnome.org/extension/9343/ssh-watchdog/">
+    <img alt="Install on GNOME Extensions" src="https://img.shields.io/badge/Install-GNOME%20Extensions-4A86CF?style=for-the-badge">
+  </a>
+  <br />
+  <a href="https://extensions.gnome.org/extension/9343/ssh-watchdog/">Direct link</a>
+</p>
 
 ## Install
 
@@ -33,7 +39,7 @@ SSH Watchdog is a GNOME Shell extension that shows active SSH connections in the
 
 ## Compatibility
 
-- GNOME Shell `45` through `49`.
+- GNOME Shell `45` through `50`.
 - Uses local `who` output as the SSH session data source.
 
 ## Runtime Requirements
