@@ -78,6 +78,11 @@
 journalctl -f -o cat /usr/bin/gnome-shell
 ```
 
+## Release Documentation
+
+- Changelog: `CHANGELOG.md`
+- Release process: `RELEASE.md`
+
 ## Project Layout
 
 - `extension/extension.js`: main extension runtime and notification logic.
