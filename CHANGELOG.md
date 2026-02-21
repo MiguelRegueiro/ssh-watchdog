@@ -2,6 +2,43 @@
 
 All notable changes to SSH Watchdog are documented in this file.
 
+## [Unreleased]
+
+### Added
+- Optional per-session termination controls in the dropdown menu (`Enable Session Termination`, default `false`).
+- Session termination safety flow:
+  - explicit `End -> Confirm/Cancel` action path,
+  - ownership guard (current user only),
+  - termination progress state (`ending...`),
+  - async `TERM` with fallback `KILL` and post-action verification.
+- Session-row field toggles for `user`, `TTY`, and `remote IP` (all default `true`).
+- New schema keys for session controls and session-row visibility.
+
+### Changed
+- Session model moved from unique-address rows to per-session rows (`user + tty + address`) while preserving IPv4/IPv6 filtering and normalization.
+- Indicator count now reflects active sessions.
+- Alert logic moved from address-based diffs to per-session diffs:
+  - connection alerts trigger for new sessions even from the same IP,
+  - disconnection alerts trigger for closed sessions, including manual terminations from the extension.
+- Alert labels in preferences are now explicit:
+  - `Connection Alerts`
+  - `Disconnection Alerts`
+- Preferences information architecture was reorganized for clarity:
+  - `Monitoring`
+  - `Alerts`
+  - `Top Bar`
+  - `Session List`
+  - `Session Control`
+- Session row presentation is more compact (`user tty ip`) with ellipsis handling for long lines.
+- Session action controls now use GNOME Shell-native button styling (`button`, `default`, `flat`).
+
+### Docs
+- README updated for:
+  - per-session behavior,
+  - connection/disconnection alert semantics,
+  - session display toggles,
+  - session-control behavior and requirements.
+
 ## [4] - 2026-02-20
 
 ### Added
@@ -62,7 +99,8 @@ All notable changes to SSH Watchdog are documented in this file.
 - EGO updates require a strictly increasing integer in `extension/metadata.json` (`version` field).
 - Legacy GitHub release names used semantic version labels (`1.0.x`) during early development.
 - Historical release `1.0.3` corresponds to EGO version `3`.
-- Current release line uses EGO integer versioning (current: `4`).
+- Current published EGO release is integer version `4`.
+- Ongoing development in this repository targets next release version `5`.
 
 ## License Notes
 

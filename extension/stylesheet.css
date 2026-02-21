@@ -43,3 +43,18 @@
 .ssh-ip-label.dim-label {
   opacity: 0.7;
 }
+
+.ssh-watchdog-session-controls {
+  spacing: 6px;
+  margin-left: 6px;
+}
+
+.ssh-session-status-label {
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.ssh-session-action-button {
+  min-width: 0;
+  padding: 3px 10px;
+}

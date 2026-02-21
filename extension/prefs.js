@@ -38,17 +38,30 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
 
         settings.bind('refresh-interval', intervalRow, 'value', Gio.SettingsBindFlags.DEFAULT);
 
-        const appearanceGroup = new Adw.PreferencesGroup({
-            title: 'Appearance',
+        const topBarGroup = new Adw.PreferencesGroup({
+            title: 'Top Bar',
             description: 'Choose which elements are visible in the top bar indicator.',
         });
-        page.add(appearanceGroup);
 
         const notificationsGroup = new Adw.PreferencesGroup({
-            title: 'Notifications',
+            title: 'Alerts',
             description: 'Control connection and disconnection alerts.',
         });
+
+        const sessionDisplayGroup = new Adw.PreferencesGroup({
+            title: 'Session List',
+            description: 'Choose which details appear in each active session row.',
+        });
+
+        const sessionControlGroup = new Adw.PreferencesGroup({
+            title: 'Session Control',
+            description: 'Optional controls for ending sessions from the extension menu.',
+        });
+
         page.add(notificationsGroup);
+        page.add(topBarGroup);
+        page.add(sessionDisplayGroup);
+        page.add(sessionControlGroup);
 
         const iconRow = new Adw.ActionRow({
             title: 'Show Icon',
@@ -58,7 +71,7 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         });
         iconRow.add_suffix(iconSwitch);
         iconRow.activatable_widget = iconSwitch;
-        appearanceGroup.add(iconRow);
+        topBarGroup.add(iconRow);
 
         settings.bind('show-icon', iconSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
 
@@ -70,12 +83,12 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         });
         prefixRow.add_suffix(prefixSwitch);
         prefixRow.activatable_widget = prefixSwitch;
-        appearanceGroup.add(prefixRow);
+        topBarGroup.add(prefixRow);
 
         settings.bind('show-prefix', prefixSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
 
         const notificationsRow = new Adw.ActionRow({
-            title: 'Notifications',
+            title: 'Connection Alerts',
         });
         const notificationsSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,
@@ -97,5 +110,62 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
         notificationsGroup.add(disconnectNotificationsRow);
 
         settings.bind('show-disconnect-notifications', disconnectNotificationsSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const sessionTerminationRow = new Adw.ActionRow({
+            title: 'Enable Session Termination',
+            subtitle: 'Allows ending sessions owned by the current user from the menu.',
+        });
+        const sessionTerminationSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        sessionTerminationRow.add_suffix(sessionTerminationSwitch);
+        sessionTerminationRow.activatable_widget = sessionTerminationSwitch;
+        sessionControlGroup.add(sessionTerminationRow);
+
+        settings.bind('enable-session-termination', sessionTerminationSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const sessionUserRow = new Adw.ActionRow({
+            title: 'Show User',
+        });
+        const sessionUserSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        sessionUserRow.add_suffix(sessionUserSwitch);
+        sessionUserRow.activatable_widget = sessionUserSwitch;
+        sessionDisplayGroup.add(sessionUserRow);
+        settings.bind('show-session-user', sessionUserSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const sessionTTYRow = new Adw.ActionRow({
+            title: 'Show TTY',
+        });
+        const sessionTTYSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        sessionTTYRow.add_suffix(sessionTTYSwitch);
+        sessionTTYRow.activatable_widget = sessionTTYSwitch;
+        sessionDisplayGroup.add(sessionTTYRow);
+        settings.bind('show-session-tty', sessionTTYSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const sessionAddressRow = new Adw.ActionRow({
+            title: 'Show Remote IP',
+        });
+        const sessionAddressSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER,
+        });
+        sessionAddressRow.add_suffix(sessionAddressSwitch);
+        sessionAddressRow.activatable_widget = sessionAddressSwitch;
+        sessionDisplayGroup.add(sessionAddressRow);
+        settings.bind('show-session-address', sessionAddressSwitch, 'active', Gio.SettingsBindFlags.DEFAULT);
+
+        const ensureAtLeastOneSessionField = toggledSwitch => {
+            if (sessionUserSwitch.active || sessionTTYSwitch.active || sessionAddressSwitch.active)
+                return;
+
+            toggledSwitch.active = true;
+        };
+
+        sessionUserSwitch.connect('notify::active', () => ensureAtLeastOneSessionField(sessionUserSwitch));
+        sessionTTYSwitch.connect('notify::active', () => ensureAtLeastOneSessionField(sessionTTYSwitch));
+        sessionAddressSwitch.connect('notify::active', () => ensureAtLeastOneSessionField(sessionAddressSwitch));
     }
 }

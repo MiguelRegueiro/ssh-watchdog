@@ -21,8 +21,10 @@
 ## Features
 
 - Top-bar indicator with live SSH session count.
-- Dropdown menu listing unique active client IPv4 and IPv6 addresses.
-- Optional notifications for newly seen remote addresses and closed address sessions.
+- Dropdown menu listing active SSH sessions (user, TTY, remote IPv4/IPv6).
+- Optional per-session connection and disconnection alerts.
+- Optional per-session termination controls in the dropdown menu (disabled by default).
+- Session-row field toggles for user, TTY, and remote IP.
 - Configurable refresh interval (`1` to `60` seconds).
 - Appearance toggles for icon and `SSH:` label prefix.
 - Menu refresh when opened, in addition to interval polling.
@@ -46,14 +48,19 @@
 
 - `who` available in `PATH`
 - Active SSH logins represented in `who` output
+- `pkill` available in `PATH` (only required when session termination controls are enabled)
 
 ## Preferences (Defaults)
 
 - Refresh interval: `10` seconds (range `1-60`).
 - Show icon: `true`.
 - Show SSH prefix: `true`.
-- Show notifications: `true`.
+- Show connection alerts: `true`.
 - Show disconnection alerts: `true`.
+- Enable session termination: `false`.
+- Show user in session rows: `true`.
+- Show TTY in session rows: `true`.
+- Show remote IP in session rows: `true`.
 
 ## Privacy and Data Handling
 
@@ -66,8 +73,8 @@
 - If a session is not reported by `who`, it will not appear in the extension.
 - Entries where `who` reports only hostnames (not IP addresses) are ignored.
 - Connect/disconnect notifications start after the first polling baseline is established.
-- Disconnection alerts are address-based: closing one of multiple sessions from the same address may not trigger an alert.
 - Notifications are delivered through GNOME Shell's system notification source.
+- Session termination controls only apply to sessions owned by the currently logged-in user.
 
 ## Support
 
@@ -85,7 +92,7 @@ journalctl -f -o cat /usr/bin/gnome-shell
 
 ## Project Layout
 
-- `extension/extension.js`: main extension runtime and notification logic.
+- `extension/extension.js`: main extension runtime, notifications, and session actions.
 - `extension/prefs.js`: Adwaita preferences UI.
 - `extension/schemas/org.gnome.shell.extensions.ssh-watchdog.gschema.xml`: GSettings schema.
 - `extension/metadata.json`: extension metadata (UUID, shell compatibility, version).
