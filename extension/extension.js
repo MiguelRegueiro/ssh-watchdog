@@ -26,7 +26,7 @@ const REFRESH_INTERVAL_DEFAULT_SECONDS = 10;
 const SSHWatchdogIndicator = GObject.registerClass(
 class SSHWatchdogIndicator extends PanelMenu.Button {
     constructor() {
-        super(0.0, 'SSH Watchdog', false);
+        super(0.5, 'SSH Watchdog', false);
         this._lastSessions = null;
         this._showPrefix = true;
         this._count = 0;
@@ -315,10 +315,11 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         const row = new St.BoxLayout({
             x_expand: true,
             y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'ssh-watchdog-session-row',
         });
         const icon = new St.Icon({
             icon_name: 'utilities-terminal-symbolic',
-            style_class: 'popup-menu-icon',
+            style_class: 'popup-menu-icon ssh-session-terminal-icon',
         });
         const label = new St.Label({
             text: this._formatSessionLabel(session),
@@ -333,9 +334,9 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         row.add_child(label);
 
         if (this._enableSessionTermination) {
-            const controlsBox = this._createSessionControls(session);
-            if (controlsBox)
-                row.add_child(controlsBox);
+            const controls = this._createSessionControls(session);
+            if (controls?.box)
+                row.add_child(controls.box);
         }
 
         item.add_child(row);
@@ -344,63 +345,146 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
 
     _createSessionControls(session) {
         const controlsBox = new St.BoxLayout({
+            x_expand: false,
             y_align: Clutter.ActorAlign.CENTER,
+            x_align: Clutter.ActorAlign.END,
             style_class: 'ssh-watchdog-session-controls',
         });
 
+        const actionSlot = new St.BoxLayout({
+            x_expand: false,
+            y_align: Clutter.ActorAlign.CENTER,
+            x_align: Clutter.ActorAlign.CENTER,
+            style_class: 'ssh-watchdog-session-action-slot ssh-watchdog-action-slot',
+        });
+        controlsBox.add_child(actionSlot);
+
         if (!this._canTerminateSession(session)) {
-            controlsBox.add_child(new St.Icon({
-                icon_name: 'system-lock-screen-symbolic',
-                y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'popup-menu-icon ssh-session-locked-icon',
-            }));
-            return controlsBox;
+            actionSlot.add_child(this._createSessionLockedStateControl());
+            return {box: controlsBox};
         }
 
         if (this._terminatingTTYs.has(session.tty)) {
-            controlsBox.add_child(new St.Label({
-                text: 'ending...',
-                y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'ssh-session-status-label dim-label',
-            }));
-            return controlsBox;
+            actionSlot.add_child(this._createSessionStatusControl('ending...'));
+            return {box: controlsBox};
         }
 
         if (this._pendingTerminationTTY === session.tty) {
-            controlsBox.add_child(this._createSessionActionButton('Confirm', 'default', () => {
-                this._handleSessionTerminateRequested(session);
-            }));
-            controlsBox.add_child(this._createSessionActionButton('Cancel', 'flat', () => {
-                this._pendingTerminationTTY = null;
-                this._updateWhoOutput(this._sessions);
-            }));
-            return controlsBox;
+            actionSlot.add_child(this._createSessionTextActionButton(
+                'Confirm',
+                ['destructive-action', 'ssh-session-end-confirm'],
+                () => {
+                    this._handleSessionTerminateRequested(session);
+                }
+            ));
+            actionSlot.add_child(this._createSessionIconActionButton(
+                'window-close-symbolic',
+                'Cancel',
+                ['ssh-session-end-cancel'],
+                () => {
+                    this._pendingTerminationTTY = null;
+                    this._updateWhoOutput(this._sessions);
+                }
+            ));
+            return {box: controlsBox};
         }
 
-        controlsBox.add_child(this._createSessionActionButton('End', '', () => {
-            this._pendingTerminationTTY = session.tty;
-            this._updateWhoOutput(this._sessions);
-        }));
+        actionSlot.add_child(this._createSessionTextActionButton(
+            'End',
+            ['ssh-session-end-idle'],
+            () => {
+                this._pendingTerminationTTY = session.tty;
+                this._updateWhoOutput(this._sessions);
+            }
+        ));
 
-        return controlsBox;
+        return {box: controlsBox};
     }
 
     _canTerminateSession(session) {
         return session.user === this._currentUser;
     }
 
-    _createSessionActionButton(label, variantClass, onClicked) {
+    _addStyleClasses(actor, styleClasses) {
+        if (!styleClasses)
+            return;
+
+        const classes = Array.isArray(styleClasses) ? styleClasses : [styleClasses];
+        for (const className of classes) {
+            if (typeof className === 'string' && className.length > 0)
+                actor.add_style_class_name(className);
+        }
+    }
+
+    _createSessionLockedStateControl() {
+        const icon = new St.Icon({
+            icon_name: 'system-lock-screen-symbolic',
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'popup-menu-icon ssh-session-locked-icon',
+        });
+        const lockButton = new St.Bin({
+            x_expand: false,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'ssh-session-lock-button',
+        });
+        lockButton.set_child(icon);
+        return lockButton;
+    }
+
+    _createSessionStatusControl(text) {
+        const label = new St.Label({
+            text,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'ssh-session-action-status-label dim-label',
+        });
+        const statusBin = new St.Bin({
+            x_expand: false,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'ssh-session-action-status',
+        });
+        statusBin.set_child(label);
+        return statusBin;
+    }
+
+    _createSessionTextActionButton(label, styleClasses, onClicked) {
         const button = new St.Button({
             label,
             reactive: true,
             can_focus: true,
             track_hover: true,
+            x_expand: false,
             y_align: Clutter.ActorAlign.CENTER,
-            style_class: 'button ssh-session-action-button',
+            style_class: 'button ssh-session-end-button',
         });
 
-        if (variantClass.length > 0)
-            button.add_style_class_name(variantClass);
+        this._addStyleClasses(button, styleClasses);
+
+        button.connect('clicked', () => onClicked());
+        return button;
+    }
+
+    _createSessionIconActionButton(iconName, tooltipText, styleClasses, onClicked) {
+        const icon = new St.Icon({
+            icon_name: iconName,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'popup-menu-icon ssh-session-icon',
+        });
+        const button = new St.Button({
+            reactive: true,
+            can_focus: true,
+            track_hover: true,
+            x_expand: false,
+            y_align: Clutter.ActorAlign.CENTER,
+            style_class: 'button ssh-session-icon-button',
+        });
+        button.set_child(icon);
+
+        if (tooltipText.length > 0 && typeof button.set_tooltip_text === 'function')
+            button.set_tooltip_text(tooltipText);
+
+        this._addStyleClasses(button, styleClasses);
 
         button.connect('clicked', () => onClicked());
         return button;

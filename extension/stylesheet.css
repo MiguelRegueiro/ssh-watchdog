@@ -33,9 +33,16 @@
   background-color: transparent;
 }
 
+.ssh-watchdog-session-row {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+}
+
 .ssh-ip-label {
   font-family: monospace;
   font-size: 14px;
+  flex-grow: 1;
   margin-left: 12px;
   opacity: 1.0;
 }
@@ -45,20 +52,99 @@
 }
 
 .ssh-watchdog-session-controls {
+  spacing: 0;
+  padding-left: 10px;
+  padding-right: 0;
+}
+
+.ssh-watchdog-session-action-slot,
+.ssh-watchdog-action-slot {
   spacing: 6px;
-  margin-left: 6px;
+  min-height: 26px;
+  height: 26px;
+  max-height: 26px;
+  justify-content: flex-start;
+  align-items: center;
 }
 
-.ssh-session-status-label {
+.ssh-session-action-status {
+  min-height: 26px;
+  height: 26px;
+  max-height: 26px;
+  padding: 0 2px;
+}
+
+.ssh-session-action-status-label {
   font-size: 12px;
-  margin-left: 8px;
+  margin-top: 1px;
 }
 
-.ssh-session-action-button {
+.ssh-session-end-button {
   min-width: 0;
-  padding: 3px 10px;
+  min-height: 26px;
+  height: 26px;
+  max-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+}
+
+.ssh-session-end-idle {
+  background-color: rgba(127, 127, 127, 0.16);
+}
+
+.ssh-session-end-idle:hover {
+  background-color: rgba(127, 127, 127, 0.24);
+}
+
+.ssh-session-end-confirm {
+  background-color: @error_bg_color;
+  color: @error_fg_color;
+  font-weight: bold;
+}
+
+.ssh-session-icon-button {
+  min-width: 24px;
+  width: 24px;
+  max-width: 24px;
+  min-height: 26px;
+  height: 26px;
+  max-height: 26px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.ssh-session-end-cancel {
+  min-width: 24px;
+  width: 24px;
+  max-width: 24px;
+  background-color: transparent;
+  border: 1px solid rgba(127, 127, 127, 0.24);
+}
+
+.ssh-session-end-cancel:hover {
+  background-color: rgba(127, 127, 127, 0.14);
+}
+
+.ssh-session-icon {
+  icon-size: 14px;
+  margin-top: 1px;
+}
+
+.ssh-session-lock-button {
+  min-width: 24px;
+  width: 24px;
+  max-width: 24px;
+  min-height: 26px;
+  height: 26px;
+  max-height: 26px;
+  border-radius: 999px;
 }
 
 .ssh-session-locked-icon {
-  opacity: 0.7;
+  opacity: 0.8;
+  margin-top: 1px;
+}
+
+.ssh-session-terminal-icon {
+  margin-top: 1px;
 }
