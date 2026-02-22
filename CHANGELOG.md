@@ -2,7 +2,7 @@
 
 All notable changes to SSH Watchdog are documented in this file.
 
-## [Unreleased]
+## [5] - 2026-02-22
 
 ### Added
 - Optional per-session termination controls in the dropdown menu (`Enable Session Termination`, default `false`).
@@ -30,8 +30,14 @@ All notable changes to SSH Watchdog are documented in this file.
   - `Session List`
   - `Session Control`
 - Session row presentation is more compact (`user tty ip`) with ellipsis handling for long lines.
-- Session action controls now use GNOME Shell-native button styling (`button`, `default`, `flat`).
+- Session action controls now use GNOME Shell-native button styling (`button`, `flat`, `destructive-action`) with compact pill controls.
 - Non-terminable sessions now show a lock state instead of exposing a failing action path.
+- Session menu source alignment is centered to the top-bar indicator.
+- Session termination confirmation label now uses `Confirm`.
+
+### Fixed
+- Removed invalid `margin-left: auto` usage in extension stylesheet that triggered GNOME Shell `St-WARNING` log spam.
+- `ending...` status text is now vertically centered during session termination.
 
 ### Docs
 - README updated for:
@@ -100,8 +106,7 @@ All notable changes to SSH Watchdog are documented in this file.
 - EGO updates require a strictly increasing integer in `extension/metadata.json` (`version` field).
 - Legacy GitHub release names used semantic version labels (`1.0.x`) during early development.
 - Historical release `1.0.3` corresponds to EGO version `3`.
-- Current published EGO release is integer version `4`.
-- Ongoing development in this repository targets next release version `5`.
+- Current published EGO release is integer version `5`.
 
 ## License Notes
 

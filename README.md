@@ -24,6 +24,8 @@
 - Dropdown menu listing active SSH sessions (user, TTY, remote IPv4/IPv6).
 - Optional per-session connection and disconnection alerts.
 - Optional per-session termination controls in the dropdown menu (disabled by default).
+- Session termination flow: `End -> Confirm -> ending...` with cancel support.
+- Non-terminable sessions (different local user) show a lock indicator instead of an actionable control.
 - Session-row field toggles for user, TTY, and remote IP.
 - Configurable refresh interval (`1` to `60` seconds).
 - Appearance toggles for icon and `SSH:` label prefix.
@@ -75,6 +77,7 @@
 - Connect/disconnect notifications start after the first polling baseline is established.
 - Notifications are delivered through GNOME Shell's system notification source.
 - Session termination controls only apply to sessions for the currently logged-in user.
+- Session controls are shown only when `Enable Session Termination` is enabled in preferences.
 
 ## Support
 
@@ -85,7 +88,7 @@
 journalctl -f -o cat /usr/bin/gnome-shell
 ```
 
-## Release Documentation
+## Documentation
 
 - Changelog: `CHANGELOG.md`
 
