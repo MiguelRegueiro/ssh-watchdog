@@ -1,7 +1,7 @@
 <h1 align="center"><img src="assets/images/ssh-watchdog-logo-256.png" width="42" alt="SSH Watchdog logo" align="absmiddle" />&nbsp;SSH Watchdog</h1>
 
 <p align="center">
-  Manage active SSH sessions in the GNOME top bar.
+  Monitor and manage active SSH sessions in the GNOME top bar.
 </p>
 
 <p align="center">
