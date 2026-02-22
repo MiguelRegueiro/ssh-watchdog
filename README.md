@@ -6,17 +6,11 @@
 
 <p align="center">
   <a href="https://extensions.gnome.org/extension/9343/ssh-watchdog/">
-    <img alt="Install on GNOME Extensions" src="https://img.shields.io/badge/Install-GNOME%20Extensions-4A86CF?style=for-the-badge">
+    <img src="https://img.shields.io/badge/Install_on-GNOME_Extensions-001e90?style=for-the-badge&logo=gnome&logoColor=4398d7&labelColor=0044af" alt="Install on GNOME Extensions">
   </a>
   <br />
-  <a href="https://extensions.gnome.org/extension/9343/ssh-watchdog/">Direct link</a>
+  <samp><a href="https://extensions.gnome.org/extension/9343/ssh-watchdog/">extensions.gnome.org</a></samp>
 </p>
-
-## Install
-
-- Recommended: install from GNOME Extensions (EGO) using Extension Manager:
-  `https://extensions.gnome.org/extension/9343/ssh-watchdog/`
-- Updates and removal are handled directly in Extension Manager.
 
 ## Features
 
