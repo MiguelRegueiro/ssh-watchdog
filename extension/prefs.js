@@ -113,7 +113,7 @@ export default class SSHWatchdogPreferences extends ExtensionPreferences {
 
         const sessionTerminationRow = new Adw.ActionRow({
             title: 'Enable Session Termination',
-            subtitle: 'Allows ending sessions owned by the current user from the menu.',
+            subtitle: 'Allows ending sessions for your own user from the menu.',
         });
         const sessionTerminationSwitch = new Gtk.Switch({
             valign: Gtk.Align.CENTER,

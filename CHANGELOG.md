@@ -31,6 +31,7 @@ All notable changes to SSH Watchdog are documented in this file.
   - `Session Control`
 - Session row presentation is more compact (`user tty ip`) with ellipsis handling for long lines.
 - Session action controls now use GNOME Shell-native button styling (`button`, `default`, `flat`).
+- Non-terminable sessions now show a lock state instead of exposing a failing action path.
 
 ### Docs
 - README updated for:

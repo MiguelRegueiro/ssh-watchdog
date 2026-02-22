@@ -30,7 +30,7 @@
     <key name="enable-session-termination" type="b">
       <default>false</default>
       <summary>Enable session termination controls</summary>
-      <description>Whether to show menu controls that can terminate SSH sessions owned by the current user.</description>
+      <description>Whether to show menu controls that can terminate SSH sessions for the current user.</description>
     </key>
     <key name="show-session-user" type="b">
       <default>true</default>

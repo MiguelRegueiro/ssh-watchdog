@@ -58,3 +58,7 @@
   min-width: 0;
   padding: 3px 10px;
 }
+
+.ssh-session-locked-icon {
+  opacity: 0.7;
+}

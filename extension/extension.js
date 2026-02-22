@@ -348,11 +348,11 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
             style_class: 'ssh-watchdog-session-controls',
         });
 
-        if (session.user !== this._currentUser) {
-            controlsBox.add_child(new St.Label({
-                text: 'read-only',
+        if (!this._canTerminateSession(session)) {
+            controlsBox.add_child(new St.Icon({
+                icon_name: 'system-lock-screen-symbolic',
                 y_align: Clutter.ActorAlign.CENTER,
-                style_class: 'ssh-session-status-label dim-label',
+                style_class: 'popup-menu-icon ssh-session-locked-icon',
             }));
             return controlsBox;
         }
@@ -383,6 +383,10 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         }));
 
         return controlsBox;
+    }
+
+    _canTerminateSession(session) {
+        return session.user === this._currentUser;
     }
 
     _createSessionActionButton(label, variantClass, onClicked) {
@@ -522,13 +526,8 @@ class SSHWatchdogIndicator extends PanelMenu.Button {
         if (!this._enableSessionTermination)
             return;
 
-        if (session.user !== this._currentUser) {
-            this._notify(
-                'SSH Watchdog',
-                `Cannot end session owned by ${session.user}.`
-            );
+        if (!this._canTerminateSession(session))
             return;
-        }
 
         this._pendingTerminationTTY = null;
         this._terminatingTTYs.add(session.tty);

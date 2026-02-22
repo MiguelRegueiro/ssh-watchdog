@@ -1,7 +1,7 @@
 <h1 align="center"><img src="assets/images/ssh-watchdog-logo-256.png" width="42" alt="SSH Watchdog logo" align="absmiddle" />&nbsp;SSH Watchdog</h1>
 
 <p align="center">
-  Shows active SSH sessions in the GNOME top bar.
+  Manage active SSH sessions in the GNOME top bar.
 </p>
 
 <p align="center">
@@ -74,7 +74,7 @@
 - Entries where `who` reports only hostnames (not IP addresses) are ignored.
 - Connect/disconnect notifications start after the first polling baseline is established.
 - Notifications are delivered through GNOME Shell's system notification source.
-- Session termination controls only apply to sessions owned by the currently logged-in user.
+- Session termination controls only apply to sessions for the currently logged-in user.
 
 ## Support
 
@@ -88,7 +88,6 @@ journalctl -f -o cat /usr/bin/gnome-shell
 ## Release Documentation
 
 - Changelog: `CHANGELOG.md`
-- Release process: `RELEASE.md`
 
 ## Project Layout
 
