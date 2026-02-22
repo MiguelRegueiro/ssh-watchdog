@@ -33,13 +33,13 @@
 
 ## Screenshots
 
-| **Idle State** | **Session Details** |
+| **Connection Notification (With Active Sessions)** | **Confirm Session Termination** |
 |---|---|
-| <img src="screenshots/ssh-watchdog-01-idle.png" width="400" alt="Idle State"> | <img src="screenshots/ssh-watchdog-03-active-sessions.png" width="400" alt="Session Details"> |
+| <img src="screenshots/ssh-watchdog-01-connection-notification-active.png" width="400" alt="Connection Notification (With Active Sessions)"> | <img src="screenshots/ssh-watchdog-02-active-sessions-confirm.png" width="400" alt="Confirm Session Termination"> |
 
-| **Connection Notification** | **Preferences** |
+| **Idle State (No Active Sessions)** | **Preferences** |
 |---|---|
-| <img src="screenshots/ssh-watchdog-02-notification.png" width="400" alt="Connection Notification"> | <img src="screenshots/ssh-watchdog-04-preferences.png" width="400" alt="Preferences"> |
+| <img src="screenshots/ssh-watchdog-03-idle-no-sessions.png" width="400" alt="Idle State (No Active Sessions)"> | <img src="screenshots/ssh-watchdog-04-preferences-session-controls.png" width="400" alt="Preferences"> |
 
 ## Compatibility
 
